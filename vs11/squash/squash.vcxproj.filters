@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx</Extensions>
+    </Filter>
+    <Filter Include="Header Files\AMP">
+      <UniqueIdentifier>{346d33cf-d6a0-4c19-bbdf-ff7d5564ca7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\AMP">
+      <UniqueIdentifier>{f2015983-80d8-455f-9288-7ceace03441d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\squash.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\compress_amp.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\compress_bc1.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\compress_bc2.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\compress_bc3.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\compress_bc45.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\compress_qdm.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\quantize_a0.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\quantize_a1.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\quantize_a2.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\quantize_a4.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\quantize_amp.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\compress.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\convert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\format.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\matte.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\quantize.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\convert_amp.cpp">
+      <Filter>Source Files\AMP</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\squash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\filterdispatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\format.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\maths.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

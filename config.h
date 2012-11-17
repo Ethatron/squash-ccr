@@ -32,6 +32,8 @@
 #ifndef SQUASH_CONFIG_H
 #define SQUASH_CONFIG_H
 
+#define	SQUASH_USE_API	110
+
 /* spill level X's intermediate sums for level X+1 to use for calculation (and up)
  *
  * we start spilling when the i/o of the spill is less than the accumulation-cost

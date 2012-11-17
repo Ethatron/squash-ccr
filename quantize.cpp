@@ -685,6 +685,8 @@ bool TextureQuantizeRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
  */
 
 namespace squash {
+  
+#pragma	warning (disable : 4100)
 
 /* there exist only a <USHORT, long> template */
 template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_RGB , 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
@@ -729,6 +731,8 @@ template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYV, 1>(int minlevel,
 template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzV, 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
 template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZV, 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
 template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYV, 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+
+#pragma	warning (default : 4100)
 
 } // namespace squash
 

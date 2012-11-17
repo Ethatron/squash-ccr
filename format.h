@@ -32,9 +32,11 @@
 #ifndef SQUASH_FORMAT_H
 #define SQUASH_FORMAT_H
 
+#include "config.h"
+
 /* ############################################################################################## */
 
-#if	(_MSC_VER == 1700) && 0
+#if	(_MSC_VER == 1700) && (SQUASH_USE_API >= 110)
 #define DX11
 #endif
 

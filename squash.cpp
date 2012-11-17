@@ -31,7 +31,6 @@
 
 #include <assert.h>
 
-#include "../../globals.h"
 #include "squash.h"
 
 /* ####################################################################################
@@ -45,6 +44,7 @@ int normalsteepness = 8;
 float alphaopaqueness = 0.0f;
 int ignoreborder = 0;
 bool ignorewhitealpha = false;
+bool leavemiplevels = false;
 
 /* ------------------------------------------------------------------------------------
  */
@@ -364,6 +364,8 @@ bool TextureInfoLevel(LPDIRECT3DTEXTURE tex, RESOURCEINFO &nfo, int lvl) {
 }
 
 bool TextureInfoLevel(LPDIRECT3DCUBETEXTURE tex, RESOURCEINFO &nfo, int fce, int lvl) {
+  fce = fce;
+
 #ifdef DX11
   ID3D11Texture2D *plane = (ID3D11Texture2D *)tex;
   plane->GetDesc(&nfo);
@@ -407,7 +409,8 @@ ULONG *TextureLock(LPDIRECT3DCUBETEXTURE tex, int fce, int lvl, ULONG *pitch, bo
   TEXMEMORY texs;
 
 #ifdef DX11
-  UINT sub = D3D11CalcSubresource(lvl, fce, ?);
+  RESOURCEINFO texo; TextureInfoLevel(tex, texo, fce, lvl);
+  UINT sub = D3D11CalcSubresource(lvl, fce, texo.MipLevels);
   pD3DDeviceContext->Map(tex, sub, (writable ? D3D11_MAP_READ_WRITE : D3D11_MAP_READ), 0, &texs);
   ULONG *sTex = (ULONG *)texs.pData;
   if (pitch) *pitch = texs.RowPitch;
@@ -422,8 +425,9 @@ ULONG *TextureLock(LPDIRECT3DCUBETEXTURE tex, int fce, int lvl, ULONG *pitch, bo
 
 void TextureUnlock(LPDIRECT3DCUBETEXTURE tex, int fce, int lvl) {
 #ifdef DX11
-  UINT sub = D3D11CalcSubresource(lvl, fce, ?);
-  pD3DDeviceContext->Unmap(tex, lvl);
+  RESOURCEINFO texo; TextureInfoLevel(tex, texo, fce, lvl);
+  UINT sub = D3D11CalcSubresource(lvl, fce, texo.MipLevels);
+  pD3DDeviceContext->Unmap(tex, sub);
 #else
   tex->UnlockRect((D3DCUBEMAP_FACES)fce, lvl);
 #endif
@@ -437,6 +441,7 @@ void TextureUnlock(LPDIRECT3DCUBETEXTURE tex, int fce, int lvl) {
 namespace squash {
 
 bool TextureConvert(RESOURCEINFO &info, LPDIRECT3DTEXTURE *tex, bool black) {
+  black = black;
   LPDIRECT3DTEXTURE replct;
   HRESULT res;
 
@@ -530,6 +535,7 @@ bool TextureConvert(RESOURCEINFO &info, LPDIRECT3DTEXTURE *tex, bool black) {
 }
 
 bool TextureFillMip(int w, int h, LPDIRECT3DTEXTURE *tex, bool dither, bool gamma, int levels) {
+  w = w; h = h;
   LPDIRECT3DTEXTURE replct;
   RESOURCEINFO texo;
   HRESULT res;
@@ -787,7 +793,10 @@ bool TextureConvert(int minlevel, LPDIRECT3DTEXTURE *tex, bool dither, bool gamm
 
 bool TextureCollapse(LPDIRECT3DTEXTURE *tex, TEXFORMAT target, bool swizzle) {
   LPDIRECT3DTEXTURE replct;
+  RESOURCEINFO texo;
   HRESULT res;
+
+  TextureInfoLevel(*tex, texo, 0);
 
 #ifdef DX11
   ID3D11Texture2D *rtex; RESOURCEINFO cr;
@@ -804,6 +813,8 @@ bool TextureCollapse(LPDIRECT3DTEXTURE *tex, TEXFORMAT target, bool swizzle) {
   cr.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
   cr.SampleDesc.Count = 1;
 
+//res = pD3DDevice->CreateTexture1D(&cr, NULL, &rtex);
+//res = pD3DDevice->CreateTexture3D(&cr, NULL, &rtex);
   res = pD3DDevice->CreateTexture2D(&cr, NULL, &rtex);
   if (res != S_OK)
     return false;

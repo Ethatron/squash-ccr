@@ -42,7 +42,7 @@
 #if	defined(SQUASH_USE_AMP) && defined(SQUASH_USE_PRE)
 
 /* namespace to hide multiple defined symbols */
-#include "squish/singlecolourlookup_ccr.inl"
+#include "squish/coloursinglelookup_ccr.inl"
 #include "squish/degeneracy_ccr.inl"
 namespace bc45 {
 #include "squish.h"

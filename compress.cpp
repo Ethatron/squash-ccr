@@ -38,32 +38,13 @@
 
 /* ------------------------------------------------------------------------------------
  */
-#if	defined(SQUASH_USE_AMP)
-#define	SQUISH_USE_AMP
-#endif
-#if	defined(SQUASH_USE_AMP_DEBUG)
-#define	SQUASH_USE_AMP_DEBUG
-#endif
-#if	defined(SQUASH_USE_PRE)
-#define	SQUISH_USE_PRE
-#endif
-#if	defined(SQUASH_USE_CCR)
-#define	SQUISH_USE_CCR
-#endif
-#if	defined(SQUASH_USE_SSE)
-#define	SQUISH_USE_SSE	SQUASH_USE_SSE
-#endif
-#if	defined(SQUASH_USE_XSSE)
-#define	SQUISH_USE_XSSE	SQUASH_USE_XSSE
-#endif
-
 /* only way to do this, <format> from template argument to preprocessor check */
 #if	defined(SQUASH_USE_AMP) && defined(SQUASH_USE_PRE)
 
 #define	ONLY_HEADERS
 #include "squish.inl"
 #define	ONLY_ARRAY
-#include "squish/singlecolourlookup_ccr.inl"
+#include "squish/coloursinglelookup_ccr.inl"
 #include "squish/degeneracy_ccr.inl"
 
 namespace squash {
@@ -782,7 +763,7 @@ bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
 
     /* sixteen colors in alpha */
     if (!white && (h.histn[0] >= 1) && (h.histn[0] <= 16)) {
-      int histc = 0;
+      unsigned long histc = 0;
       if (h.histo[0][0x00]) histc++; if (h.histo[0][0x11]) histc++;
       if (h.histo[0][0x22]) histc++; if (h.histo[0][0x33]) histc++;
       if (h.histo[0][0x44]) histc++; if (h.histo[0][0x55]) histc++;
@@ -801,7 +782,7 @@ bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
 	    addnote(" Quantized alpha-channel detected.\n");
 
 	  if (h.grey && (h.histn[1] >= 1) && (h.histn[1] <= 16)) {
-	    int histc = 0;
+	    unsigned long histc = 0;
 	    if (h.histo[1][0x00]) histc++; if (h.histo[1][0x11]) histc++;
 	    if (h.histo[1][0x22]) histc++; if (h.histo[1][0x33]) histc++;
 	    if (h.histo[1][0x44]) histc++; if (h.histo[1][0x55]) histc++;

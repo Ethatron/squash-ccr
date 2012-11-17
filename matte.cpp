@@ -45,8 +45,8 @@ void TextureMatte(RESOURCEINFO &texo, ULONG sPch, ULONG *sTex) {
 
     /**/ if (TCOMPRESS_NORMAL(format)) {
       /* forward/backward-z */
-      ULONG v = 0x00808000 | (TCOMPRESS_NINDEP(format) ? 0x00 : 0xFF);
-      ULONG c =              (TCOMPRESS_SIDES (format) ? 0x00 : 0xFF) << 24;
+      ULONG v = 0x00808000 | (TCOMPRESS_NINDEP(format) ? 0x00UL : 0xFFUL);
+      ULONG c =              (TCOMPRESS_SIDES (format) ? 0x00UL : 0xFFUL) << 24;
 
 #if	defined(SQUASH_USE_AMP) && !defined(SQUASH_USE_AMP_DEBUG)
       Concurrency::extent<1> num(texo.Width * texo.Height);
@@ -88,7 +88,7 @@ void TextureMatte(RESOURCEINFO &texo, ULONG sPch, ULONG *sTex) {
     }
 
     else if (TCOMPRESS_GREYS(format)) {
-      ULONG c =              (TCOMPRESS_SIDES (format) ? 0x00 : 0xFF) << 24;
+      ULONG c =              (TCOMPRESS_SIDES (format) ? 0x00UL : 0xFFUL) << 24;
 
 #if	defined(SQUASH_USE_AMP) && !defined(SQUASH_USE_AMP_DEBUG)
       Concurrency::extent<1> num(texo.Width * texo.Height);
@@ -128,7 +128,7 @@ void TextureMatte(RESOURCEINFO &texo, ULONG sPch, ULONG *sTex) {
     }
 
     else if (!TCOMPRESS_SIDES(format)) {
-      ULONG c =              (TCOMPRESS_SIDES (format) ? 0x00 : 0xFF) << 24;
+      ULONG c =              (TCOMPRESS_SIDES (format) ? 0x00UL : 0xFFUL) << 24;
 
 #if	defined(SQUASH_USE_AMP) && !defined(SQUASH_USE_AMP_DEBUG)
       Concurrency::extent<1> num(texo.Width * texo.Height);

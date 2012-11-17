@@ -1482,6 +1482,8 @@ bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
  */
 
 namespace squash {
+  
+#pragma	warning (disable : 4100)
 
 /* we don't process normal-maps as integers */
 template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_xyz >(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
@@ -1495,6 +1497,8 @@ template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XZYD>(int minlevel, LPD
 template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_xyzV>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
 template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XYZV>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
 template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XZYV>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+
+#pragma	warning (default : 4100)
 
 } // namespace squash
 

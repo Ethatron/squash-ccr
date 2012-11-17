@@ -46,7 +46,9 @@ extern bool ignorewhitealpha;
 /* ------------------------------------------------------------------------------------
  */
 
-#if	(_MSC_VER == 1700) && 0
+#include "config.h"
+
+#if	(_MSC_VER == 1700) && (SQUASH_USE_API >= 110)
 #pragma warning (disable : 4005)
 #include <d3d11.h>
 #include <d3dx11.h>

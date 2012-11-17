@@ -29,6 +29,8 @@
  * version of this file under either the MPL or the LGPL License."
  */
 
+#pragma	warning (disable : 4100)
+
 #include "maths.h"
 
 /* maximum dimensionality of the "pixel"-vector or vexel :^P */
@@ -452,7 +454,6 @@ static doinline void AccuXYZD(float (&nn)[DIM], const ULONG &n) ccr_restricted {
   const float rnrm = 1.0f / 0xFF;
 
   __m128 *o = (__m128 *)nn;
-  __m128 on = _mm_set_ss(0x01);
   __m128 nm = _mm_set_ps(rnrm, rnrm, rnrm, rnrm);
   __m128 hf = _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f);
   __m128 db = _mm_set_ps(2.0f, 2.0f, 2.0f, 1.0f);
@@ -2880,3 +2881,5 @@ static doinline void Clear(type (&t)[DIM]) ccr_restricted {
   memset(&t, 0, sizeof(t));
 #endif
 }
+
+#pragma	warning (default : 4100)

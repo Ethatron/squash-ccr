@@ -309,10 +309,24 @@
 #error
 #endif
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+#elif	((TCOMPRESS_CHANNELS(format) + (TCOMPRESS_GREYS(format) ? 2 : 0)) == 1)
+	/* 1x LONG for ATI1 */
+
+#if	(coding == 4)
+	{ posx <<= 0;
+	  squish::CompressAlphaBtc3(elm.barrier, lxy, iTex[0], 0xFFFF, b[0]       , yArr      );
+
+	  dArr(posy, posx + 0) = b[0][0];
+	  dArr(posy, posx + 1) = b[0][1];
+	}
+#else
+#error
+#endif
+	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #elif	((TCOMPRESS_CHANNELS(format) + (TCOMPRESS_GREYS(format) ? 2 : 0)) == 2)
 	/* 2x LONG for ATI2 */
 
-#if	(coding == 4)
+#if	(coding == 5)
 	{ posx <<= 1;
 	  squish::CompressAlphaBtc3(elm.barrier, lxy, iTex[0], 0xFFFF, b[0]       , yArr      );
 	  squish::CompressAlphaBtc3(elm.barrier, lxy, iTex[1], 0xFFFF, b[1]       , yArr      );
@@ -321,20 +335,6 @@
 	  dArr(posy, posx + 1) = b[0][1];
 	  dArr(posy, posx + 2) = b[1][0];
 	  dArr(posy, posx + 3) = b[1][1];
-	}
-#else
-#error
-#endif
-	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#elif	((TCOMPRESS_CHANNELS(format) + (TCOMPRESS_GREYS(format) ? 2 : 0)) == 1)
-	/* 1x LONG for ATI1 */
-
-#if	(coding == 5)
-	{ posx <<= 0;
-	  squish::CompressAlphaBtc3(elm.barrier, lxy, iTex[0], 0xFFFF, b[0]       , yArr      );
-
-	  dArr(posy, posx + 0) = b[0][0];
-	  dArr(posy, posx + 1) = b[0][1];
 	}
 #else
 #error

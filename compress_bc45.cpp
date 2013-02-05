@@ -91,8 +91,8 @@ using namespace bc45;
 #if	(fiting_max >= 0)
     {
       switch (format) {
-        case TCOMPRESS_a   : ff(TextureCompressDXT, TCOMPRESS_a   , 5, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
-        case TCOMPRESS_A   : ff(TextureCompressDXT, TCOMPRESS_A   , 5, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
+        case TCOMPRESS_a   : ff(TextureCompressDXT, TCOMPRESS_a   , 4, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
+        case TCOMPRESS_A   : ff(TextureCompressDXT, TCOMPRESS_A   , 4, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
 ////    case TCOMPRESS_L   :
 ////    case TCOMPRESS_RGB :
 ////    case TCOMPRESS_RGBV: ff(TextureCompressDXT, TCOMPRESS_RGB , 3, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
@@ -103,13 +103,14 @@ using namespace bc45;
 //      case TCOMPRESS_LH  :
 //      case TCOMPRESS_RGBH: ff(TextureCompressDXT, TCOMPRESS_RGBH, 3, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
 
-        case TCOMPRESS_xy  : ff(TextureCompressDXT, TCOMPRESS_xy  , 4, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
-        case TCOMPRESS_xyZ : ff(TextureCompressDXT, TCOMPRESS_xyZ , 5, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
-        case TCOMPRESS_XY  : ff(TextureCompressDXT, TCOMPRESS_XY  , 4, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
-        case TCOMPRESS_XYz : ff(TextureCompressDXT, TCOMPRESS_XYz , 4, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
+        case TCOMPRESS_xy  : ff(TextureCompressDXT, TCOMPRESS_xy  , 5, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
+        case TCOMPRESS_xyZ : ff(TextureCompressDXT, TCOMPRESS_xyZ , 4, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
+        case TCOMPRESS_XY  : ff(TextureCompressDXT, TCOMPRESS_XY  , 5, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
+        case TCOMPRESS_XYz : ff(TextureCompressDXT, TCOMPRESS_XYz , 5, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
 ////    case TCOMPRESS_xyz :
 ////    case TCOMPRESS_xyzV: ff(TextureCompressDXT, TCOMPRESS_xyz , 3, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
 //      case TCOMPRESS_xyzD: ff(TextureCompressDXT, TCOMPRESS_xyzD, 3, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
+//      case TCOMPRESS_xyCD: ff(TextureCompressDXT, TCOMPRESS_xyCD, 3, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
 ////    case TCOMPRESS_XYZ :
 ////    case TCOMPRESS_XYZV: ff(TextureCompressDXT, TCOMPRESS_XYZ , 3, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
 //      case TCOMPRESS_XYZD: ff(TextureCompressDXT, TCOMPRESS_XYZD, 3, 0)<UTYPE, type>(texo, texd, texs, texr, level, l, blocksize, flags); break;
@@ -141,6 +142,7 @@ using namespace bc45;
     TextureCompressDXT_BC45<ULONG, float>(TCOMPRESS_XY  , texo, texd, texs, texr, level, l, blocksize, flags);
 //  TextureCompressDXT_BC45<ULONG, float>(TCOMPRESS_XYz , texo, texd, texs, texr, level, l, blocksize, flags);
 //  TextureCompressDXT_BC45<ULONG, float>(TCOMPRESS_xyzD, texo, texd, texs, texr, level, l, blocksize, flags);
+//  TextureCompressDXT_BC45<ULONG, float>(TCOMPRESS_xyCD, texo, texd, texs, texr, level, l, blocksize, flags);
 //  TextureCompressDXT_BC45<ULONG, float>(TCOMPRESS_XYZD, texo, texd, texs, texr, level, l, blocksize, flags);
 //  TextureCompressDXT_BC45<ULONG, float>(TCOMPRESS_XZYD, texo, texd, texs, texr, level, l, blocksize, flags);
   }

@@ -214,14 +214,14 @@
 #elif	(format == TCOMPRESS_LH )
 	bTex[0][ly][lx] = (t <<  8) & 0xFF000000,
 	bTex[1][ly][lx] = (t <<  0) & 0xFF000000;
+#elif	(format == TCOMPRESS_XYz)
+        bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
+	bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
 #elif	(format == TCOMPRESS_XY )
 	bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
 	bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
 #elif	(format == TCOMPRESS_xy )
 	bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
-	bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
-#elif	(format == TCOMPRESS_XYz)
-        bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
 	bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
 #else
         bTex[0][ly][lx] = (t << 16) & 0xFF000000,
@@ -266,15 +266,15 @@
 //	    if (TCOMPRESS_SWIZZL(format))
 //	      t0 = //t;
 //		  (((t0 >> 24) & 0xFF) << 24 /*h*/)
-//	        | (((t0 >> 16) & 0xFF) <<  8 /*r*/)
-//	        | (((t0 >>  8) & 0xFF) <<  0 /*g*/)
-//	        | (((t0 >>  0) & 0xFF) << 16 /*b*/);
+//	        + (((t0 >> 16) & 0xFF) <<  8 /*r*/)
+//	        + (((t0 >>  8) & 0xFF) <<  0 /*g*/)
+//	        + (((t0 >>  0) & 0xFF) << 16 /*b*/);
 //	    else
 	    t0 = //t;
 		(((t0 >> 24) & 0xFF) << 24 /*h*/)
-	      | (((t0 >> 16) & 0xFF) <<  0 /*r*/)
-	      | (((t0 >>  8) & 0xFF) <<  8 /*g*/)
-	      | (((t0 >>  0) & 0xFF) << 16 /*b*/);
+	      + (((t0 >> 16) & 0xFF) <<  0 /*r*/)
+	      + (((t0 >>  8) & 0xFF) <<  8 /*g*/)
+	      + (((t0 >>  0) & 0xFF) << 16 /*b*/);
 	  /* bwap+ror */
 
 	  {
@@ -293,15 +293,15 @@
 	  /* swizzle RGB -> RBG */
 	  if (TCOMPRESS_SWIZZL(format)) {
 	    val = (
-	      (((t0 >> 16) & 0xFF) <<  0) |
-	      (((t0 >>  0) & 0xFF) <<  8) |
+	      (((t0 >> 16) & 0xFF) <<  0) +
+	      (((t0 >>  0) & 0xFF) <<  8) +
 	      (((t0 >>  8) & 0xFF) << 16)
 	    );
 	  }
 	  else {
 	    val = (
-	      (((t0 >> 16) & 0xFF) <<  0) |
-	      (((t0 >>  8) & 0xFF) <<  8) |
+	      (((t0 >> 16) & 0xFF) <<  0) +
+	      (((t0 >>  8) & 0xFF) <<  8) +
 	      (((t0 >>  0) & 0xFF) << 16)
 	    );
 	  }
@@ -372,7 +372,7 @@
 	    int t3 = bTex[1][ly][lx + 1];
 
 	    /* write combining */
-	    unsigned int val = (ULONG)((t3 << 24) | (t2 << 16) | (t1 << 8) | (t0 << 0));
+	    unsigned int val = (ULONG)((t3 << 24) + (t2 << 16) + (t1 << 8) + (t0 << 0));
 
 	    /* write out all of an "int" */
 	    dArr(lposy, lposx) = val;
@@ -391,7 +391,7 @@
 	    int t3 = bTex[0][ly][lx + 3];
 
 	    /* write combining */
-	    unsigned int val = (ULONG)((t3 << 24) | (t2 << 16) | (t1 << 8) | (t0 << 0));
+	    unsigned int val = (ULONG)((t3 << 24) + (t2 << 16) + (t1 << 8) + (t0 << 0));
 
 	    /* write out all of an "int" */
 	    dArr(lposy, lposx) = val;

@@ -19,6 +19,12 @@
     <Filter Include="Source Files\AMP">
       <UniqueIdentifier>{f2015983-80d8-455f-9288-7ceace03441d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\edcode">
+      <UniqueIdentifier>{617ac134-2f11-4f89-af0d-b297c8f63f5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\edcode">
+      <UniqueIdentifier>{3c888882-513d-4615-859a-53534c01a76c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\squash.cpp">
@@ -75,6 +81,111 @@
     <ClCompile Include="..\..\convert_amp.cpp">
       <Filter>Source Files\AMP</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\decode.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\encode.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\edcode.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode_trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode_transform.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode_visualize.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode_analyze.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode_threaded.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode-blk2b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode-blk3b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode-blk4b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode-pal565pair.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode-pal8pair.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-blk2b-trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-blk2b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-blk3b-trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-blk3b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-blk4b-trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-blk4b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-pal565pair-trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-pal565pair.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-raw5b-trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-raw5b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-raw8b-trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-raw8b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-pal8pair-trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-pal8pair.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-raw1b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-raw1b-trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode-raw1b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode-raw5b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode-raw8b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\decode-raw6b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-raw6b.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deps\encode-raw6b-trial.cpp">
+      <Filter>Source Files\edcode</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\squash.h">
@@ -97,6 +208,48 @@
     </ClInclude>
     <ClInclude Include="..\..\maths.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\decode.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\encode.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\edcode.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\edcode_barolto.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\edcode_colour.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\edcode_index.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\edcode_buffer_grow.hpp">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\edcode_grey.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\edcode_io.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\encode_trial.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\edcode_io_narrow.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\edcode_io_wide.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\encode_analyze.h">
+      <Filter>Header Files\edcode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deps\encode_transform.h">
+      <Filter>Header Files\edcode</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -103,16 +103,16 @@ namespace squash {
 #include "convert_amp.cpp"
 
 #undef	format
-  
+
 } // namespace squash
 
 #endif
 
 /* ------------------------------------------------------------------------------------
  */
- 
+
 namespace squash {
-  
+
 struct histogram {
   unsigned long histo[4][256];
   unsigned long histn[4];
@@ -134,7 +134,7 @@ void HistogramConvertRAW(struct histogram *h, RESOURCEINFO &texo, ULONG sPch, UL
       lft += borderx, rgt -= borderx;
       top += bordery, bot -= bordery;
     }
-    
+
 #if	defined(SQUASH_USE_AMP) && !defined(SQUASH_USE_AMP_DEBUG)
     int bools[2] = {0};
     int masks[3] = {0};
@@ -432,7 +432,7 @@ void HistogramConvertRAW(struct histogram *h, RESOURCEINFO &texo, ULONG sPch, UL
     }
     }
 #endif
-    
+
 }
 
 #if	defined(SQUASH_INTERMEDIATES)
@@ -470,6 +470,7 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
       case TCOMPRESS_xyz : ff(TextureConvertRAW, TCOMPRESS_xyz )<UTYPE, type>(texo, texd, texs, texr, levels, l, lv, av); break;
       case TCOMPRESS_xyzV: ff(TextureConvertRAW, TCOMPRESS_xyzV)<UTYPE, type>(texo, texd, texs, texr, levels, l, lv, av); break;
       case TCOMPRESS_xyzD: ff(TextureConvertRAW, TCOMPRESS_xyzD)<UTYPE, type>(texo, texd, texs, texr, levels, l, lv, av); break;
+      case TCOMPRESS_xyCD: ff(TextureConvertRAW, TCOMPRESS_xyCD)<UTYPE, type>(texo, texd, texs, texr, levels, l, lv, av); break;
       case TCOMPRESS_XYZ : ff(TextureConvertRAW, TCOMPRESS_XYZ )<UTYPE, type>(texo, texd, texs, texr, levels, l, lv, av); break;
       case TCOMPRESS_XZY : ff(TextureConvertRAW, TCOMPRESS_XZY )<UTYPE, type>(texo, texd, texs, texr, levels, l, lv, av); break;
       case TCOMPRESS_XYZV: ff(TextureConvertRAW, TCOMPRESS_XYZV)<UTYPE, type>(texo, texd, texs, texr, levels, l, lv, av); break;
@@ -593,12 +594,12 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
 						    bTex[1][ly][lx] = (t <<  0) & 0xFF000000;
 		  else if (format == TCOMPRESS_LH ) bTex[0][ly][lx] = (t <<  8) & 0xFF000000,
 						    bTex[1][ly][lx] = (t <<  0) & 0xFF000000;
-		  else if (format == TCOMPRESS_XY ) bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
-						    bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
-          	  else if (format == TCOMPRESS_xy ) bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
-						    bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
-          	  else if (format == TCOMPRESS_XYz) bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
-						    bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
+          	  else if (format == TCOMPRESS_XYz) bTex[0][ly][lx] = (t << 24) & 0xFF000000, bTex[0][ly][lx] -= 0x80000000,
+						    bTex[1][ly][lx] = (t << 16) & 0xFF000000, bTex[1][ly][lx] -= 0x80000000;
+		  else if (format == TCOMPRESS_XY ) bTex[0][ly][lx] = (t << 24) & 0xFF000000, bTex[0][ly][lx] -= 0x80000000,
+						    bTex[1][ly][lx] = (t << 16) & 0xFF000000, bTex[1][ly][lx] -= 0x80000000;
+          	  else if (format == TCOMPRESS_xy ) bTex[0][ly][lx] = (t << 24) & 0xFF000000, bTex[0][ly][lx] -= 0x80000000,
+						    bTex[1][ly][lx] = (t << 16) & 0xFF000000, bTex[1][ly][lx] -= 0x80000000;
           	  else                              bTex[0][ly][lx] = (t << 16) & 0xFF000000,
 						    bTex[1][ly][lx] = (t << 24) & 0xFF000000;
 		  break;
@@ -629,15 +630,15 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
 //	    if (TCOMPRESS_SWIZZL(format))
 //	      t0 = //t;
 //		  (((t0 >> 24) & 0xFF) << 24 /*h*/)
-//	        | (((t0 >> 16) & 0xFF) <<  8 /*r*/)
-//	        | (((t0 >>  8) & 0xFF) <<  0 /*g*/)
-//	        | (((t0 >>  0) & 0xFF) << 16 /*b*/);
+//	        + (((t0 >> 16) & 0xFF) <<  8 /*r*/)
+//	        + (((t0 >>  8) & 0xFF) <<  0 /*g*/)
+//	        + (((t0 >>  0) & 0xFF) << 16 /*b*/);
 //	    else
 	      t0 = //t;
 		  (((t0 >> 24) & 0xFF) << 24 /*h*/)
-	        | (((t0 >> 16) & 0xFF) <<  0 /*r*/)
-	        | (((t0 >>  8) & 0xFF) <<  8 /*g*/)
-	        | (((t0 >>  0) & 0xFF) << 16 /*b*/);
+	        + (((t0 >> 16) & 0xFF) <<  0 /*r*/)
+	        + (((t0 >>  8) & 0xFF) <<  8 /*g*/)
+	        + (((t0 >>  0) & 0xFF) << 16 /*b*/);
 	    /* bwap+ror */
 
 	    {
@@ -661,15 +662,15 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
 	    /* swizzle RGB -> RBG */
 	    if (TCOMPRESS_SWIZZL(format)) {
 	      val = (
-		(((t0 >> 16) & 0xFF) <<  0) |
-		(((t0 >>  0) & 0xFF) <<  8) |
+		(((t0 >> 16) & 0xFF) <<  0) +
+		(((t0 >>  0) & 0xFF) <<  8) +
 		(((t0 >>  8) & 0xFF) << 16)
 	      );
 	    }
 	    else {
 	      val = (
-		(((t0 >> 16) & 0xFF) <<  0) |
-		(((t0 >>  8) & 0xFF) <<  8) |
+		(((t0 >> 16) & 0xFF) <<  0) +
+		(((t0 >>  8) & 0xFF) <<  8) +
 		(((t0 >>  0) & 0xFF) << 16)
 	      );
 	    }
@@ -683,13 +684,13 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
 	      switch (lposx & 3) {
 		case 0:
 		  /* write out three-quarter of an "int" */
-		  atomic_fetch_xor(&dArr(lposy, lposx >> 2), dArr(lposy, lposx >> 2) & (0xFFFFFF << 0));
-		  atomic_fetch_xor(&dArr(lposy, lposx >> 2),                    (val & 0xFFFFFF) << 0 );
+		    atomic_fetch_xor(&dArr(lposy, lposx >> 2), dArr(lposy, lposx >> 2) & (0xFFFFFF << 0));
+		    atomic_fetch_xor(&dArr(lposy, lposx >> 2),                    (val & 0xFFFFFF) << 0 );
 		  break;
 		case 1:
 		  /* write out three-quarter of an "int" */
-		  atomic_fetch_xor(&dArr(lposy, lposx >> 2), dArr(lposy, lposx >> 2) & (0xFFFFFF << 8));
-		  atomic_fetch_xor(&dArr(lposy, lposx >> 2),                    (val & 0xFFFFFF) << 8 );
+		    atomic_fetch_xor(&dArr(lposy, lposx >> 2), dArr(lposy, lposx >> 2) & (0xFFFFFF << 8));
+		    atomic_fetch_xor(&dArr(lposy, lposx >> 2),                    (val & 0xFFFFFF) << 8 );
 		  break;
 		case 2:
 		  /* write out three-quarter of an "int" */
@@ -702,8 +703,8 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
 		    atomic_fetch_xor(&dArr(lposy, lposx >> 2),                    (val & 0xFF) << 0 );
 		  }
 		  else {
-		    atomic_fetch_xor(&dArr(lposy + 1, 0), dArr(lposy + 1, 0) & (0xFF << 0));
-		    atomic_fetch_xor(&dArr(lposy + 1, 0),               (val & 0xFF) << 0 );
+		    atomic_fetch_xor(&dArr(lposy + 1, 0     ), dArr(lposy + 1, 0     ) & (0xFF << 0));
+		    atomic_fetch_xor(&dArr(lposy + 1, 0     ),                    (val & 0xFF) << 0 );
 		  }
 		  break;
 		case 3:
@@ -717,8 +718,8 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
 		    atomic_fetch_xor(&dArr(lposy, lposx >> 2),                    (val >> 8) & 0xFFFF );
 		  }
 		  else {
-		    atomic_fetch_xor(&dArr(lposy + 1, 0), dArr(lposy + 1, 0) & (0xFFFF << 0));
-		    atomic_fetch_xor(&dArr(lposy + 1, 0),               (val & 0xFFFF) << 0 );
+		    atomic_fetch_xor(&dArr(lposy + 1, 0     ), dArr(lposy + 1, 0     ) & (0xFFFF << 0));
+		    atomic_fetch_xor(&dArr(lposy + 1, 0     ),                    (val & 0xFFFF) << 0 );
 		  }
 		  break;
 	      }
@@ -811,7 +812,7 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
     for (int y = 0; y < (int)texd.Height; y += TY) {
 #endif
       if (!(y & 0x3F)) {
-	logrf("level %2d/%2d: line %4d/%4d processed        \r", l + 1, levels, y, texd.Height);
+//	logrf("level %2d/%2d: line %4d/%4d processed        \r", l + 1, levels, y, texd.Height);
 
 	/* problematic, the throw() inside may not block all threads ... */
 //	PollProgress();
@@ -990,14 +991,14 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
 						    bTex[1][ly][lx] = (t <<  0) & 0xFF000000;
 		  else if (format == TCOMPRESS_LH ) bTex[0][ly][lx] = (t <<  8) & 0xFF000000,
 						    bTex[1][ly][lx] = (t <<  0) & 0xFF000000;
-		  else if (format == TCOMPRESS_XY ) bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
-						    bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
-          	  else if (format == TCOMPRESS_xy ) bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
-						    bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
-          	  else if (format == TCOMPRESS_XYz) bTex[0][ly][lx] = (t << 16) & 0xFF000000 - 0x80,
-						    bTex[1][ly][lx] = (t << 24) & 0xFF000000 - 0x80;
-          	  else                              bTex[0][ly][lx] = (t << 16) & 0xFF000000,
-						    bTex[1][ly][lx] = (t << 24) & 0xFF000000;
+          	  else if (format == TCOMPRESS_XYz) bTex[0][ly][lx] = (t << 24) & 0xFF000000, bTex[0][ly][lx] -= 0x80000000,
+						    bTex[1][ly][lx] = (t << 16) & 0xFF000000, bTex[1][ly][lx] -= 0x80000000;
+		  else if (format == TCOMPRESS_XY ) bTex[0][ly][lx] = (t << 24) & 0xFF000000, bTex[0][ly][lx] -= 0x80000000,
+						    bTex[1][ly][lx] = (t << 16) & 0xFF000000, bTex[1][ly][lx] -= 0x80000000;
+          	  else if (format == TCOMPRESS_xy ) bTex[0][ly][lx] = (t << 24) & 0xFF000000, bTex[0][ly][lx] -= 0x80000000,
+						    bTex[1][ly][lx] = (t << 16) & 0xFF000000, bTex[1][ly][lx] -= 0x80000000;
+          	  else                              bTex[0][ly][lx] = (t <<  8) & 0xFF000000,
+						    bTex[1][ly][lx] = (t <<  0) & 0xFF000000;
 		  break;
           /* -Z-- -> Z--- */
 	  /* A--- -> A--- */
@@ -1027,15 +1028,15 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
 //	    if (TCOMPRESS_SWIZZL(format))
 //	      t0 = //t;
 //		  (((t0 >> 24) & 0xFF) << 24 /*a*/)
-//	        | (((t0 >> 16) & 0xFF) <<  8 /*r*/)
-//	        | (((t0 >>  8) & 0xFF) <<  0 /*g*/)
-//	        | (((t0 >>  0) & 0xFF) << 16 /*b*/);
+//	        + (((t0 >> 16) & 0xFF) <<  8 /*r*/)
+//	        + (((t0 >>  8) & 0xFF) <<  0 /*g*/)
+//	        + (((t0 >>  0) & 0xFF) << 16 /*b*/);
 //	    else
 	      t0 = //t;
 		  (((t0 >> 24) & 0xFF) << 24 /*a*/)
-	        | (((t0 >> 16) & 0xFF) <<  0 /*r*/)
-	        | (((t0 >>  8) & 0xFF) <<  8 /*g*/)
-	        | (((t0 >>  0) & 0xFF) << 16 /*b*/);
+	        + (((t0 >> 16) & 0xFF) <<  0 /*r*/)
+	        + (((t0 >>  8) & 0xFF) <<  8 /*g*/)
+	        + (((t0 >>  0) & 0xFF) << 16 /*b*/);
 	    /* bwap+ror */
 
 	    (ULONG &)(wTex[(posy * dPch) + (posx * 4) + 0]) = t0;
@@ -1093,8 +1094,8 @@ void TextureConvertRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &tex
 }
 
 template<typename UTYPE, typename type, const int format>
-bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
-  LPDIRECT3DTEXTURE text = NULL;
+bool TextureConvertRAW(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) {
+  LPDIRECT3DBASETEXTURE text = NULL;
   RESOURCEINFO texo;
 
   TextureInfoLevel(*tex, texo, 0);
@@ -1105,8 +1106,8 @@ bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
    * channels of the output texture.
    */
   HRESULT D3DXComputeNormalMap(
-    __out  LPDIRECT3DTEXTURE pTexture,
-    __in   LPDIRECT3DTEXTURE pSrcTexture,
+    __out  LPDIRECT3DBASETEXTURE pTexture,
+    __in   LPDIRECT3DBASETEXTURE pSrcTexture,
     __in   const PALETTEENTRY *pSrcPalette,
     __in   DWORD Flags,
     __in   DWORD Channel,
@@ -1115,7 +1116,7 @@ bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
 #endif
 
   /* convert to ARGB8 (TODO: support at least the 16bit formats as well) */
-  TEXFORMAT origFormat = texo.Format;
+  TEXFORMAT origFormat = texo.Format; texo.Format = (TEXFORMAT)TEXFMT_A8R8G8B8;
   if ((origFormat != TEXFMT_A8R8G8B8) && !TextureConvert(texo, tex, TCOMPRESS_NORMAL(format)))
     return false;
 
@@ -1125,12 +1126,12 @@ bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
     memset((void *)&h, 0, sizeof(h));
     h.grey = h.blank = true;
 
-    ULONG sPch, *sTex = 
-    TextureLock((*tex), 0, &sPch); sPch >>= 2;
+    ULONG sPch, *sTex =
+    TextureLock((*tex), 0, -1, &sPch); sPch >>= 2;
     TextureMatte<format>(texo, sPch, sTex);
     HistogramConvertRAW(&h, texo, sPch, sTex);
-    TextureUnlock((*tex), 0);
-    
+    TextureUnlock((*tex), 0, -1);
+
     for (unsigned int c = 0; c < 256; c += 1) {
       if (h.histo[0][c]) h.histn[0]++;
       if (h.histo[1][c]) h.histn[1]++;
@@ -1352,13 +1353,13 @@ bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
   const int levels = TextureCalcMip(texo.Width, texo.Height, minlevel);
 
 #ifdef DX11
-  ID3D11Texture2D *rtex; RESOURCEINFO cr;
+  ID3D11Texture2D *rtex; D3D11_TEXTURE2D_DESC cr;
   memset(&cr, 0, sizeof(cr));
 
   cr.Width  = texo.Width;
   cr.Height = texo.Height;
   cr.MipLevels = levels;
-  cr.ArraySize = texo.ArraySize;
+  cr.ArraySize = texo.Slices;
 
   TEXFORMAT tf = TEXFMT_UNKNOWN;
   switch (TCOMPRESS_CHANNELS(format)) {
@@ -1377,8 +1378,9 @@ bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
     case 2: if (format == TCOMPRESS_La  ) tf = TEXFMT_A8L8    ;
 	    if (format == TCOMPRESS_LA  ) tf = TEXFMT_A8L8    ;
 	    if (format == TCOMPRESS_LH  ) tf = TEXFMT_A8L8    ;
-	    if (format == TCOMPRESS_XY  ) tf = TEXFMT_CxV8U8  ;
-	    if (format == TCOMPRESS_XYz ) tf = TEXFMT_CxV8U8  ; break;
+	    if (format == TCOMPRESS_XYz ) tf = TEXFMT_V8U8    ; /* TEXFMT_CxV8U8 */
+	    if (format == TCOMPRESS_xy  ) tf = TEXFMT_V8U8    ;
+	    if (format == TCOMPRESS_XY  ) tf = TEXFMT_V8U8    ; break;
     case 1: if (format == TCOMPRESS_a   ) tf = TEXFMT_A8      ;
 	    if (format == TCOMPRESS_A   ) tf = TEXFMT_A8      ;
 	    if (format == TCOMPRESS_L   ) tf = TEXFMT_L8      ;
@@ -1418,23 +1420,23 @@ bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
     case 2: if (format == TCOMPRESS_La  ) cnvFormat = D3DFMT_A8L8    ;
 	    if (format == TCOMPRESS_LA  ) cnvFormat = D3DFMT_A8L8    ;
 	    if (format == TCOMPRESS_LH  ) cnvFormat = D3DFMT_A8L8    ;
-	    if (format == TCOMPRESS_xy  ) cnvFormat = D3DFMT_CxV8U8  ;
-	    if (format == TCOMPRESS_XY  ) cnvFormat = D3DFMT_CxV8U8  ;
-	    if (format == TCOMPRESS_XYz ) cnvFormat = D3DFMT_CxV8U8  ; break;
+	    if (format == TCOMPRESS_XYz ) cnvFormat = D3DFMT_V8U8    ; // TEXFMT_CxV8U8
+	    if (format == TCOMPRESS_xy  ) cnvFormat = D3DFMT_V8U8    ;
+	    if (format == TCOMPRESS_XY  ) cnvFormat = D3DFMT_V8U8    ; break;
     case 1: if (format == TCOMPRESS_a   ) cnvFormat = D3DFMT_A8      ;
 	    if (format == TCOMPRESS_A   ) cnvFormat = D3DFMT_A8      ;
 	    if (format == TCOMPRESS_L   ) cnvFormat = D3DFMT_L8      ;
 	    if (format == TCOMPRESS_xyZ ) cnvFormat = D3DFMT_L8      ; break;
   }
 
-  pD3DDevice->CreateTexture(cnvWidth, cnvHeight, levels, 0, cnvFormat, D3DPOOL_SYSTEMMEM, &text, NULL);
+  pD3DDevice->CreateTexture(cnvWidth, cnvHeight, levels, 0, cnvFormat, D3DPOOL_SYSTEMMEM, (IDirect3DTexture9 **)&text, NULL);
 #endif
 
   /* damit */
   if (!text)
     return false;
 
-  ULONG sPch, *texs = TextureLock((*tex), 0, &sPch); sPch >>= 2;
+  ULONG sPch, *texs = TextureLock((*tex), 0, -1, &sPch); sPch >>= 2;
 
 #if	defined(SQUASH_INTERMEDIATES)
   struct spill smem[32] = {{0}};
@@ -1448,22 +1450,22 @@ bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
   for (int l = 0; l < levels; l++) {
     RESOURCEINFO texd;
 
-    TextureInfoLevel(text, texd, l); ULONG dPch, *texr = 
-    TextureLock(text, l, &dPch, true);
+    TextureInfoLevel(text, texd, l); ULONG dPch, *texr =
+    TextureLock(text, l, -1, &dPch, true);
 
     TextureConvertRAW<UTYPE, type, format>(smem, texo, texd, sPch, dPch, texs, texr, levels, l);
 
-    TextureUnlock(text, l);
+    TextureUnlock(text, l, -1);
   }
 
-  logrf("                                                      \r");
+//logrf("                                                      \r");
 
 #if	defined(SQUASH_INTERMEDIATES)
   for (int l = 0; l < levels; l++)
     if (smem[l].splc) _aligned_free(smem[l].splc);
 #endif
 
-  TextureUnlock((*tex), 0);
+  TextureUnlock((*tex), 0, -1);
   (*tex)->Release();
   (*tex) = text;
 
@@ -1482,21 +1484,21 @@ bool TextureConvertRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
  */
 
 namespace squash {
-  
+
 #pragma	warning (disable : 4100)
 
 /* we don't process normal-maps as integers */
-template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_xyz >(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XYZ >(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XZY >(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_xyz >(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XYZ >(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XZY >(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
-template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_xyzD>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XYZD>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XZYD>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_xyzD>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XYZD>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XZYD>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
-template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_xyzV>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XYZV>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XZYV>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_xyzV>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XYZV>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XZYV>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
 #pragma	warning (default : 4100)
 
@@ -1508,15 +1510,15 @@ template<> bool TextureConvertRAW<ULONG, long, TCOMPRESS_XZYV>(int minlevel, LPD
 namespace squash {
 
 template<typename type>
-static bool TextureConvert(int minlevel, LPDIRECT3DTEXTURE *tex, bool dither, TEXFORMAT target);
+static bool TextureConvert(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool dither, TEXFORMAT target);
 
 template<>
-static bool TextureConvert<long>(int minlevel, LPDIRECT3DTEXTURE *tex, bool dither, TEXFORMAT target) {
+static bool TextureConvert<long>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool dither, TEXFORMAT target) {
   return TextureConvert(minlevel, tex, dither, false, target);
 };
 
 template<>
-static bool TextureConvert<float>(int minlevel, LPDIRECT3DTEXTURE *tex, bool dither, TEXFORMAT target) {
+static bool TextureConvert<float>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool dither, TEXFORMAT target) {
   return TextureConvert(minlevel, tex, dither, true, target);
 };
 
@@ -1527,7 +1529,7 @@ static bool TextureConvert<float>(int minlevel, LPDIRECT3DTEXTURE *tex, bool dit
 
 namespace squash {
 
-bool TextureConvertRGBV(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureConvertRGBV(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_RGBV>(minlevel, base);
@@ -1536,7 +1538,7 @@ bool TextureConvertRGBV(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
   return res;
 }
 
-bool TextureConvertRGBA(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureConvertRGBA(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_RGBA>(minlevel, base);
@@ -1546,7 +1548,7 @@ bool TextureConvertRGBA(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool 
   return res;
 }
 
-bool TextureConvertRGB_A(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureConvertRGB_A(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_RGBa>(minlevel, base);
@@ -1556,7 +1558,7 @@ bool TextureConvertRGB_A(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool
   return res;
 }
 
-bool TextureConvertRGBH(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureConvertRGBH(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_RGBH>(minlevel, base);
@@ -1565,7 +1567,7 @@ bool TextureConvertRGBH(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
   return res;
 }
 
-bool TextureConvertRGB(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureConvertRGB(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_RGB>(minlevel, base);
@@ -1574,7 +1576,7 @@ bool TextureConvertRGB(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
   return res;
 }
 
-bool TextureConvertLA(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureConvertLA(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_LA>(minlevel, base);
@@ -1584,7 +1586,7 @@ bool TextureConvertLA(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool co
   return res;
 }
 
-bool TextureConvertL_A(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureConvertL_A(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_La>(minlevel, base);
@@ -1594,7 +1596,7 @@ bool TextureConvertL_A(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool c
   return res;
 }
 
-bool TextureConvertLH(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureConvertLH(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_LH>(minlevel, base);
@@ -1603,7 +1605,7 @@ bool TextureConvertLH(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
   return res;
 }
 
-bool TextureConvertL(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureConvertL(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_L>(minlevel, base);
@@ -1612,7 +1614,7 @@ bool TextureConvertL(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
   return res;
 }
 
-bool TextureConvertA(LPDIRECT3DTEXTURE *alpha, int minlevel, bool contrast) {
+bool TextureConvertA(LPDIRECT3DBASETEXTURE *alpha, int minlevel, bool contrast) {
   bool res = true;
 
   if (contrast) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_A>(minlevel, alpha);
@@ -1621,7 +1623,7 @@ bool TextureConvertA(LPDIRECT3DTEXTURE *alpha, int minlevel, bool contrast) {
   return res;
 }
 
-bool TextureConvert_A(LPDIRECT3DTEXTURE *alpha, int minlevel, bool contrast) {
+bool TextureConvert_A(LPDIRECT3DBASETEXTURE *alpha, int minlevel, bool contrast) {
   bool res = true;
 
   if (contrast) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_a>(minlevel, alpha);
@@ -1630,7 +1632,7 @@ bool TextureConvert_A(LPDIRECT3DTEXTURE *alpha, int minlevel, bool contrast) {
   return res;
 }
 
-bool TextureConvertL(LPDIRECT3DTEXTURE *lumi, int minlevel) {
+bool TextureConvertL(LPDIRECT3DBASETEXTURE *lumi, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, long , TCOMPRESS_L>(minlevel, lumi);
@@ -1638,7 +1640,7 @@ bool TextureConvertL(LPDIRECT3DTEXTURE *lumi, int minlevel) {
   return res;
 }
 
-bool TextureConvertXYZV(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureConvertXYZV(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_XYZV>(minlevel, norm);
@@ -1646,7 +1648,7 @@ bool TextureConvertXYZV(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureConvert_XYZV(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureConvert_XYZV(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_xyzV>(minlevel, norm);
@@ -1654,7 +1656,7 @@ bool TextureConvert_XYZV(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureConvertXYZD(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureConvertXYZD(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_XYZD>(minlevel, norm);
@@ -1662,7 +1664,7 @@ bool TextureConvertXYZD(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureConvert_XYZD(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureConvert_XYZD(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_xyzD>(minlevel, norm);
@@ -1670,19 +1672,31 @@ bool TextureConvert_XYZD(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureConvertXY_Z(LPDIRECT3DTEXTURE *norm, LPDIRECT3DTEXTURE *z, int minlevel) {
+bool TextureConvert_XY_Z(LPDIRECT3DBASETEXTURE *norm, LPDIRECT3DBASETEXTURE *z, int minlevel) {
   bool res = true;
 
   /* TODO: not really fast */
-  (*z = *norm)->AddRef();
+  if (z && norm && (*z == *norm)) (*z)->AddRef();
 
-  res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_XYz>(minlevel, norm);
-  res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_xyZ>(minlevel, z);
+  if (norm) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_XYz>(minlevel, norm);
+  if (z   ) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_xyZ>(minlevel, z   );
 
   return res;
 }
 
-bool TextureConvertXYZ(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureConvertXY_Z(LPDIRECT3DBASETEXTURE *norm, LPDIRECT3DBASETEXTURE *z, int minlevel) {
+  bool res = true;
+
+  /* TODO: not really fast */
+  if (z && norm && (*z == *norm)) (*z)->AddRef();
+
+  if (norm) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_XYZ>(minlevel, norm);
+  if (z   ) res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_XYZ>(minlevel, z   );
+
+  return res;
+}
+
+bool TextureConvertXYZ(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_XYZ>(minlevel, norm);
@@ -1690,7 +1704,7 @@ bool TextureConvertXYZ(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureConvertXZY(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureConvertXZY(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_XZY>(minlevel, norm);
@@ -1698,7 +1712,7 @@ bool TextureConvertXZY(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureConvert_XYZ(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureConvert_XYZ(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_xyz>(minlevel, norm);
@@ -1706,7 +1720,7 @@ bool TextureConvert_XYZ(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureConvertXY(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureConvertXY(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_XY>(minlevel, norm);
@@ -1714,7 +1728,15 @@ bool TextureConvertXY(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureConvertPM(LPDIRECT3DTEXTURE *base, LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureConvert_XY(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
+  bool res = true;
+
+  res = res && TextureConvertRAW<ULONG, float, TCOMPRESS_xy>(minlevel, norm);
+
+  return res;
+}
+
+bool TextureConvertPM(LPDIRECT3DBASETEXTURE *base, LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureConvertRAW<ULONG, long , TCOMPRESS_RGBH>(minlevel, base);

@@ -40,18 +40,23 @@
 #define DX11
 #endif
 
-#define D3DFMT_ATI1	(D3DFORMAT)MAKEFOURCC('A','T','I','1')
-#define D3DFMT_ATI2	(D3DFORMAT)MAKEFOURCC('A','T','I','2')
-
-#define D3DFMT_INTZ	(D3DFORMAT)MAKEFOURCC('I','N','T','Z')
-#define D3DFMT_DF24	(D3DFORMAT)MAKEFOURCC('D','F','2','4')
-#define D3DFMT_DF16	(D3DFORMAT)MAKEFOURCC('D','F','1','6')
-#define D3DFMT_RAWZ	(D3DFORMAT)MAKEFOURCC('R','A','W','Z')
-
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #ifdef DX11
 #pragma warning (disable : 4005)
 #include  <d3d11.h>
+
+#define D3DFMT_ATI1	(DWORD)MAKEFOURCC('A','T','I','1')
+#define D3DFMT_ATI2	(DWORD)MAKEFOURCC('A','T','I','2')
+
+#define D3DFMT_G1	(DWORD)MAKEFOURCC('G','1',' ',' ')
+#define D3DFMT_G2	(DWORD)MAKEFOURCC('G','2',' ',' ')
+#define D3DFMT_G4	(DWORD)MAKEFOURCC('G','4',' ',' ')
+#define D3DFMT_G8	(DWORD)MAKEFOURCC('G','8',' ',' ')
+
+#define D3DFMT_INTZ	(DWORD)MAKEFOURCC('I','N','T','Z')
+#define D3DFMT_DF24	(DWORD)MAKEFOURCC('D','F','2','4')
+#define D3DFMT_DF16	(DWORD)MAKEFOURCC('D','F','1','6')
+#define D3DFMT_RAWZ	(DWORD)MAKEFOURCC('R','A','W','Z')
 
 #define TEXFORMAT_CAST	DXGI_FORMAT
 #define TEXFMT_GREY(f)	(false)
@@ -60,6 +65,19 @@
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #else
 #include  <d3d9.h>
+
+#define D3DFMT_ATI1	(D3DFORMAT)MAKEFOURCC('A','T','I','1')
+#define D3DFMT_ATI2	(D3DFORMAT)MAKEFOURCC('A','T','I','2')
+
+#define D3DFMT_G1	(D3DFORMAT)MAKEFOURCC('G','1',' ',' ')
+#define D3DFMT_G2	(D3DFORMAT)MAKEFOURCC('G','2',' ',' ')
+#define D3DFMT_G4	(D3DFORMAT)MAKEFOURCC('G','4',' ',' ')
+#define D3DFMT_G8	(D3DFORMAT)MAKEFOURCC('G','8',' ',' ')
+
+#define D3DFMT_INTZ	(D3DFORMAT)MAKEFOURCC('I','N','T','Z')
+#define D3DFMT_DF24	(D3DFORMAT)MAKEFOURCC('D','F','2','4')
+#define D3DFMT_DF16	(D3DFORMAT)MAKEFOURCC('D','F','1','6')
+#define D3DFMT_RAWZ	(D3DFORMAT)MAKEFOURCC('R','A','W','Z')
 
 #define TEXFORMAT_CAST	D3DFORMAT
 #define TEXFMT_GREY(f)	((f == D3DFMT_L8) || (f == D3DFMT_A8L8) || (f == D3DFMT_A4L4) || (f == D3DFMT_L16))
@@ -155,6 +173,13 @@ typedef enum {
   TEXFMT_L16                  ,
   TEXFMT_A4L4                 ,
   TEXFMT_A8L8                 ,
+  
+#if 0
+  TEXFMT_G1                   ,
+  TEXFMT_G2                   ,
+  TEXFMT_G4                   ,
+  TEXFMT_G8                   ,
+#endif
 
   TEXFMT_R9G9B9E5             ,
 
@@ -279,7 +304,7 @@ public:
 #endif
 
   /* copy operator */
-  TEXFORMAT &operator = (const TEXFORMAT &txf) { TEXFMT = txf.TEXFMT; }
+  TEXFORMAT &operator = (const TEXFORMAT &txf) { TEXFMT = txf.TEXFMT; return *this; }
 
   /* comparison */
   friend bool operator == (const TEXFORMAT &a, const TEXFORMAT &b) { return a.TEXFMT == b.TEXFMT; }

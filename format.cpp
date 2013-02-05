@@ -31,6 +31,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#pragma warning (disable : 4063)
+
 #include <stdio.h>
 #include "format.h"
 
@@ -66,6 +68,14 @@ namespace squash {
       case TEXFMT_A16B16G16R16         : return D3DFMT_A16B16G16R16         ;
       case TEXFMT_A8P8                 : return D3DFMT_A8P8                 ;
       case TEXFMT_P8                   : return D3DFMT_P8                   ;
+
+#if 0
+      case TEXFMT_G1                   : return D3DFMT_G1                   ;
+      case TEXFMT_G2                   : return D3DFMT_G2                   ;
+      case TEXFMT_G4                   : return D3DFMT_G4                   ;
+      case TEXFMT_G8                   : return D3DFMT_G8                   ;
+#endif
+
       case TEXFMT_L8                   : return D3DFMT_L8                   ;
       case TEXFMT_A8L8                 : return D3DFMT_A8L8                 ;
       case TEXFMT_A4L4                 : return D3DFMT_A4L4                 ;
@@ -309,6 +319,12 @@ namespace squash {
       case D3DFMT_L8                   : TEXFMT = TEXFMT_L8                   ; break;
       case D3DFMT_A8L8                 : TEXFMT = TEXFMT_A8L8                 ; break;
       case D3DFMT_A4L4                 : TEXFMT = TEXFMT_A4L4                 ; break;
+#if 0
+      case D3DFMT_G1                   : TEXFMT = TEXFMT_G1                   ; break;
+      case D3DFMT_G2                   : TEXFMT = TEXFMT_G2                   ; break;
+      case D3DFMT_G4                   : TEXFMT = TEXFMT_G4                   ; break;
+      case D3DFMT_G8                   : TEXFMT = TEXFMT_G8                   ; break;
+#endif
       case D3DFMT_V8U8                 : TEXFMT = TEXFMT_V8U8                 ; break;
       case D3DFMT_L6V5U5               : TEXFMT = TEXFMT_L6V5U5               ; break;
       case D3DFMT_X8L8V8U8             : TEXFMT = TEXFMT_X8L8V8U8             ; break;
@@ -366,6 +382,12 @@ namespace squash {
 
     switch (dx11f) {
       case DXGI_FORMAT_UNKNOWN                    : TEXFMT = TEXFMT_UNKNOWN              ; break;
+	
+#if 0
+//    case DXGI_FORMAT_R1_TYPELESS                : TEXFMT = TEXFMT_G1                   ; break;
+      case DXGI_FORMAT_R8_TYPELESS                : TEXFMT = TEXFMT_G2                   ; break;
+      case DXGI_FORMAT_R16_TYPELESS               : TEXFMT = TEXFMT_G4                   ; break;
+#endif
 
       case DXGI_FORMAT_R1_UNORM                   : TEXFMT = TEXFMT_R1                   ; break;
       case DXGI_FORMAT_R8_UNORM                   : TEXFMT = TEXFMT_R8                   ; break;
@@ -506,6 +528,11 @@ namespace squash {
     { TEXFMT_B32G32R32          , "B32G32R32", 32, 3, 96, true },
     { TEXFMT_A32B32G32R32       , "A32B32G32R32", 32, 4, 128, true },
 
+    { TEXFMT_A8B8G8R8srgb       , "A8B8G8R8 (sRGB)", 8, 4, 32, true },
+    { TEXFMT_X8B8G8R8srgb       , "X8B8G8R8 (sRGB)", 8, 4, 32, false },
+    { TEXFMT_A8R8G8B8srgb       , "A8R8G8B8 (sRGB)", 8, 4, 32, true },
+    { TEXFMT_X8R8G8B8srgb       , "X8R8G8B8 (sRGB)", 8, 4, 32, false },
+
 #if	!defined(DX11)
     { TEXFMT_A1                 , "A1", 1, 1, 1, true },
     { TEXFMT_A8                 , "A8", 8, 1, 8, true },
@@ -533,6 +560,13 @@ namespace squash {
     { TEXFMT_L16                , "L16 (in R16)", 16, 1, 16, false },
     { TEXFMT_A4L4               , "A4L4 (in R8)", 4, 2, 8, true },
     { TEXFMT_A8L8               , "A8L8 (in G8R8)", 8, 2, 16, true },
+#endif
+
+#if 0
+    { TEXFMT_G1                 , "G1 (in R1)", 1, 1, 1, false },
+    { TEXFMT_G2                 , "G2 (in R8 typeless)", 1, 1, 2, false },
+    { TEXFMT_G4                 , "G4 (in R16 typeless)", 1, 1, 4, false },
+    { TEXFMT_G8                 , "G8 (in R8)", 1, 1, 8, false },
 #endif
 
     { TEXFMT_R9G9B9E5           , "R9G9B9E5", 9, 3, 32, true },
@@ -685,6 +719,15 @@ namespace squash {
     const char *pfx = findFormat(fmt);
     const char *sfx = NULL;
     static char fstr[256];
+    
+    if (!findAlpha(fmt)) {
+      if (findAlpha(before) && (before != TEXFMT_DXT1))
+        sfx = " (strip alpha)";
+    }
+    else {
+      if (!findAlpha(before) && (fmt != TEXFMT_DXT1))
+        sfx = " (add alpha)";
+    }
 
     if ((fmt == TEXFMT_DXT1) ||
         (fmt == TEXFMT_DXT2) ||
@@ -715,12 +758,21 @@ namespace squash {
       else
         sfx = " (strip Z)";
     }
+    
+    if ((fmt == TEXFMT_V8U8) || (fmt == TEXFMT_CxV8U8)) {
+      if (findAlpha(before) && (before != TEXFMT_DXT1))
+        sfx = " (strip Z & alpha)";
+      else if (before != TEXFMT_ATI2)
+        sfx = " (strip Z)";
+    }
 
+    /*
     if ((fmt == TEXFMT_A2R10G10B10)) {
       if (!findAlpha(before)) {
         pfx = "X2R10G10B10";
       }
     }
+    */
 
     short f = findFormatSize(fmt);
     short g = findFormatSize(before);

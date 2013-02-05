@@ -52,16 +52,16 @@ namespace squash {
   void TextureQuantizeRAW_A2(const int format, RESOURCEINFO &texo, RESOURCEINFO &texd, ULONG *texs, ULONG *texr, int levels, int l, int lv, int av);
   template<typename UTYPE, typename type>
   void TextureQuantizeRAW_A4(const int format, RESOURCEINFO &texo, RESOURCEINFO &texd, ULONG *texs, ULONG *texr, int levels, int l, int lv, int av);
-  
+
 } // namespace squash
 
 #endif
 
 /* ------------------------------------------------------------------------------------
  */
-  
+
 namespace squash {
-  
+
 #if	defined(SQUASH_INTERMEDIATES)
 struct spill {
   ULONG  splh;
@@ -189,15 +189,15 @@ void TextureQuantizeRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
 	switch (TCOMPRESS_CHANNELS(format)) {
 	  /* ABGR -> RGBA */
 	  case 4:
-	    bTex[0][ly][lx] = ((UTYPE)t) | 0x0000;
+	    bTex[0][ly][lx] = ((UTYPE)t) + 0x0000;
 	    break;
 	    /* -BGR -> RGB- */
 	  case 3:
-	    bTex[0][ly][lx] = ((UTYPE)t) | 0x0000;
+	    bTex[0][ly][lx] = ((UTYPE)t) + 0x0000;
 	    break;
 	    /* AL-- -> LA-- */
 	  case 2:
-	    bTex[0][ly][lx] = ((UTYPE)t) | 0x0000;
+	    bTex[0][ly][lx] = ((UTYPE)t) + 0x0000;
 	    break;
 	  case 1:
 	    break;
@@ -305,7 +305,7 @@ void TextureQuantizeRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
     for (int y = 0; y < (int)texd.Height; y += TY) {
 #endif
       if (!(y & 0x3F)) {
-	logrf("level %2d/%2d: line %4d/%4d processed        \r", l + 1, levels, y, texd.Height);
+//	logrf("level %2d/%2d: line %4d/%4d processed        \r", l + 1, levels, y, texd.Height);
 
 	/* problematic, the throw() inside may not block all threads ... */
 //	PollProgress();
@@ -474,15 +474,15 @@ void TextureQuantizeRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
         switch (TCOMPRESS_CHANNELS(format)) {
           /* ABGR -> RGBA */
           case 4:
-            bTex[0][ly][lx] = ((UTYPE)t) | 0x0000;
+            bTex[0][ly][lx] = ((UTYPE)t) + 0x0000;
             break;
           /* -BGR -> RGB- */
 	  case 3:
-            bTex[0][ly][lx] = ((UTYPE)t) | 0x0000;
+            bTex[0][ly][lx] = ((UTYPE)t) + 0x0000;
             break;
 	  /* AL-- -> LA-- */
           case 2:
-            bTex[0][ly][lx] = ((UTYPE)t) | 0x0000;
+            bTex[0][ly][lx] = ((UTYPE)t) + 0x0000;
             break;
           case 1:
             break;
@@ -527,8 +527,8 @@ void TextureQuantizeRAW(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
 }
 
 template<typename UTYPE, typename type, const int format, const int A>
-bool TextureQuantizeRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
-  LPDIRECT3DTEXTURE text = NULL;
+bool TextureQuantizeRAW(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) {
+  LPDIRECT3DBASETEXTURE text = NULL;
   RESOURCEINFO texo;
 
   TextureInfoLevel(*tex, texo, 0);
@@ -539,8 +539,8 @@ bool TextureQuantizeRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
    * channels of the output texture.
    */
   HRESULT D3DXComputeNormalMap(
-    __out  LPDIRECT3DTEXTURE pTexture,
-    __in   LPDIRECT3DTEXTURE pSrcTexture,
+    __out  LPDIRECT3DBASETEXTURE pTexture,
+    __in   LPDIRECT3DBASETEXTURE pSrcTexture,
     __in   const PALETTEENTRY *pSrcPalette,
     __in   DWORD Flags,
     __in   DWORD Channel,
@@ -549,29 +549,29 @@ bool TextureQuantizeRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
 #endif
 
   /* convert to ARGB8 (TODO: support at least the 16bit formats as well) */
-  TEXFORMAT origFormat = texo.Format;
+  TEXFORMAT origFormat = texo.Format; texo.Format = (TEXFORMAT)TEXFMT_A8R8G8B8;
   if ((origFormat != TEXFMT_A8R8G8B8) && !TextureConvert(texo, tex, TCOMPRESS_NORMAL(format)))
     return false;
 
   /* make a histogram of the alpha-channel */
   if (optimize) {
     ULONG sPch, *sTex =
-    TextureLock((*tex), 0, &sPch); sPch >>= 2;
+    TextureLock((*tex), 0, -1, &sPch); sPch >>= 2;
     TextureMatte<format>(texo, sPch, sTex);
-    TextureUnlock((*tex), 0);
+    TextureUnlock((*tex), 0, -1);
   }
 
   /* create the textures */
   const int levels = TextureCalcMip(texo.Width, texo.Height, minlevel);
 
 #ifdef DX11
-  ID3D11Texture2D *rtex; RESOURCEINFO cr;
+  ID3D11Texture2D *rtex; D3D11_TEXTURE2D_DESC cr;
   memset(&cr, 0, sizeof(cr));
 
   cr.Width  = texo.Width;
   cr.Height = texo.Height;
   cr.MipLevels = levels;
-  cr.ArraySize = texo.ArraySize;
+  cr.ArraySize = texo.Slices;
 
   TEXFORMAT tf = TEXFMT_UNKNOWN;
   switch (TCOMPRESS_CHANNELS(format)) {
@@ -633,14 +633,14 @@ bool TextureQuantizeRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
     case 1: break;
   }
 
-  pD3DDevice->CreateTexture(qntWidth, qntHeight, levels, 0, qntFormat, D3DPOOL_SYSTEMMEM, &text, NULL);
+  pD3DDevice->CreateTexture(qntWidth, qntHeight, levels, 0, qntFormat, D3DPOOL_SYSTEMMEM, (IDirect3DTexture9 **)&text, NULL);
 #endif
 
   /* damit */
   if (!text)
     return false;
 
-  ULONG sPch, *texs = TextureLock((*tex), 0, &sPch); sPch >>= 2;
+  ULONG sPch, *texs = TextureLock((*tex), 0, -1, &sPch); sPch >>= 2;
 
 #if	defined(SQUASH_INTERMEDIATES)
   struct spill smem[32] = {{0}};
@@ -654,22 +654,22 @@ bool TextureQuantizeRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
   for (int l = 0; l < levels; l++) {
     RESOURCEINFO texd;
 
-    TextureInfoLevel(text, texd, l); ULONG dPch, *texr = 
-    TextureLock(text, l, &dPch, true);
+    TextureInfoLevel(text, texd, l); ULONG dPch, *texr =
+    TextureLock(text, l, -1, &dPch, true);
 
     TextureQuantizeRAW<UTYPE, type, format, A>(smem, texo, texd, sPch, dPch, texs, texr, levels, l);
 
-    TextureUnlock(text, l);
+    TextureUnlock(text, l, -1);
   }
 
-  logrf("                                                      \r");
+//logrf("                                                      \r");
 
 #if	defined(SQUASH_INTERMEDIATES)
   for (int l = 0; l < levels; l++)
     if (smem[l].splc) _aligned_free(smem[l].splc);
 #endif
 
-  TextureUnlock((*tex), 0);
+  TextureUnlock((*tex), 0, -1);
   (*tex)->Release();
   (*tex) = text;
 
@@ -685,52 +685,52 @@ bool TextureQuantizeRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
  */
 
 namespace squash {
-  
+
 #pragma	warning (disable : 4100)
 
 /* there exist only a <USHORT, long> template */
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_RGB , 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_RGB , 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_RGB , 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_RGB , 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_RGB , 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_RGB , 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
 /* we don't process normal-maps as integers */
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyz , 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZ , 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZY , 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyz , 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZ , 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZY , 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyz , 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZ , 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZY , 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyz , 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZ , 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZY , 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyz , 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZ , 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZY , 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-
-/* we don't process normal-maps as integers */
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzD, 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZD, 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYD, 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzD, 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZD, 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYD, 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzD, 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZD, 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYD, 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyz , 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZ , 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZY , 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
 /* we don't process normal-maps as integers */
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzV, 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZV, 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYV, 0>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzD, 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZD, 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYD, 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzV, 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZV, 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYV, 1>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzD, 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZD, 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYD, 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzV, 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZV, 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYV, 4>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzD, 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZD, 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYD, 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+
+/* we don't process normal-maps as integers */
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzV, 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZV, 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYV, 0>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzV, 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZV, 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYV, 1>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_xyzV, 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XYZV, 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYV, 4>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
 #pragma	warning (default : 4100)
 
@@ -741,7 +741,7 @@ template<> bool TextureQuantizeRAW<ULONG, long, TCOMPRESS_XZYV, 4>(int minlevel,
 
 namespace squash {
 
-bool TextureQuantizeR10G10B10H2(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureQuantizeR10G10B10H2(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureQuantizeRAW<ULONG, float   , TCOMPRESS_RGBH, 2>(minlevel, base);
@@ -750,7 +750,7 @@ bool TextureQuantizeR10G10B10H2(LPDIRECT3DTEXTURE *base, int minlevel, bool gamm
   return res;
 }
 
-bool TextureQuantizeR10G10B10V2(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureQuantizeR10G10B10V2(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureQuantizeRAW<ULONG, float   , TCOMPRESS_RGBV, 2>(minlevel, base);
@@ -759,7 +759,7 @@ bool TextureQuantizeR10G10B10V2(LPDIRECT3DTEXTURE *base, int minlevel, bool gamm
   return res;
 }
 
-bool TextureQuantizeR10G10B10A2(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureQuantizeR10G10B10A2(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureQuantizeRAW<ULONG, float   , TCOMPRESS_RGBA, 2>(minlevel, base);
@@ -769,7 +769,7 @@ bool TextureQuantizeR10G10B10A2(LPDIRECT3DTEXTURE *base, int minlevel, bool gamm
   return res;
 }
 
-bool TextureQuantizeR10G10B10_A2(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureQuantizeR10G10B10_A2(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureQuantizeRAW<ULONG, float   , TCOMPRESS_RGBa, 2>(minlevel, base);
@@ -779,7 +779,7 @@ bool TextureQuantizeR10G10B10_A2(LPDIRECT3DTEXTURE *base, int minlevel, bool gam
   return res;
 }
 
-bool TextureQuantizeR5G5B5V1(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureQuantizeR5G5B5V1(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_RGBV, 1>(minlevel, base);
@@ -788,7 +788,7 @@ bool TextureQuantizeR5G5B5V1(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) 
   return res;
 }
 
-bool TextureQuantizeR5G5B5A1(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureQuantizeR5G5B5A1(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_RGBA, 1>(minlevel, base);
@@ -798,7 +798,7 @@ bool TextureQuantizeR5G5B5A1(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, 
   return res;
 }
 
-bool TextureQuantizeR5G5B5_A1(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureQuantizeR5G5B5_A1(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_RGBa, 1>(minlevel, base);
@@ -808,7 +808,7 @@ bool TextureQuantizeR5G5B5_A1(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma,
   return res;
 }
 
-bool TextureQuantizeR5G5B5H1(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureQuantizeR5G5B5H1(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_RGBH, 1>(minlevel, base);
@@ -817,7 +817,7 @@ bool TextureQuantizeR5G5B5H1(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) 
   return res;
 }
 
-bool TextureQuantizeR4G4B4V4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureQuantizeR4G4B4V4(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_RGBV, 4>(minlevel, base);
@@ -826,7 +826,7 @@ bool TextureQuantizeR4G4B4V4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) 
   return res;
 }
 
-bool TextureQuantizeR4G4B4A4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureQuantizeR4G4B4A4(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_RGBA, 4>(minlevel, base);
@@ -836,7 +836,7 @@ bool TextureQuantizeR4G4B4A4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, 
   return res;
 }
 
-bool TextureQuantizeR4G4B4_A4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureQuantizeR4G4B4_A4(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_RGBa, 4>(minlevel, base);
@@ -846,7 +846,7 @@ bool TextureQuantizeR4G4B4_A4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma,
   return res;
 }
 
-bool TextureQuantizeR4G4B4H4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureQuantizeR4G4B4H4(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_RGBH, 4>(minlevel, base);
@@ -855,7 +855,7 @@ bool TextureQuantizeR4G4B4H4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) 
   return res;
 }
 
-bool TextureQuantizeR5G6B5(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureQuantizeR5G6B5(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_RGB, 0>(minlevel, base);
@@ -864,7 +864,7 @@ bool TextureQuantizeR5G6B5(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
   return res;
 }
 
-bool TextureQuantizeL4A4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureQuantizeL4A4(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureQuantizeRAW<UCHAR, float, TCOMPRESS_LA, 4>(minlevel, base);
@@ -874,7 +874,7 @@ bool TextureQuantizeL4A4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool
   return res;
 }
 
-bool TextureQuantizeL4_A4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureQuantizeL4_A4(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
   if   (contrast) res = res && TextureQuantizeRAW<UCHAR, float, TCOMPRESS_La, 4>(minlevel, base);
@@ -884,7 +884,7 @@ bool TextureQuantizeL4_A4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, boo
   return res;
 }
 
-bool TextureQuantizeL4H4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureQuantizeL4H4(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
   if (gamma) res = res && TextureQuantizeRAW<UCHAR, float, TCOMPRESS_LH, 4>(minlevel, base);
@@ -893,7 +893,7 @@ bool TextureQuantizeL4H4(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
   return res;
 }
 
-bool TextureQuantizeX10Y10Z10V2(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantizeX10Y10Z10V2(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<ULONG, float, TCOMPRESS_XYZV, 2>(minlevel, norm);
@@ -901,7 +901,7 @@ bool TextureQuantizeX10Y10Z10V2(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantize_X10Y10Z10V2(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantize_X10Y10Z10V2(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<ULONG, float, TCOMPRESS_xyzV, 2>(minlevel, norm);
@@ -909,7 +909,7 @@ bool TextureQuantize_X10Y10Z10V2(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantizeX10Y10Z10D2(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantizeX10Y10Z10D2(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<ULONG, float, TCOMPRESS_XYZD, 2>(minlevel, norm);
@@ -917,7 +917,7 @@ bool TextureQuantizeX10Y10Z10D2(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantize_X10Y10Z10D2(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantize_X10Y10Z10D2(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<ULONG, float, TCOMPRESS_xyzD, 2>(minlevel, norm);
@@ -925,7 +925,7 @@ bool TextureQuantize_X10Y10Z10D2(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantizeX4Y4Z4D4(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantizeX4Y4Z4D4(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_XYZD, 4>(minlevel, norm);
@@ -933,7 +933,7 @@ bool TextureQuantizeX4Y4Z4D4(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantize_X4Y4Z4D4(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantize_X4Y4Z4D4(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_xyzD, 4>(minlevel, norm);
@@ -941,7 +941,7 @@ bool TextureQuantize_X4Y4Z4D4(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantizeX4Y4Z4V4(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantizeX4Y4Z4V4(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_XYZV, 4>(minlevel, norm);
@@ -949,7 +949,7 @@ bool TextureQuantizeX4Y4Z4V4(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantize_X4Y4Z4V4(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantize_X4Y4Z4V4(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_xyzV, 4>(minlevel, norm);
@@ -957,7 +957,7 @@ bool TextureQuantize_X4Y4Z4V4(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantizeX5Y6Z5(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantizeX5Y6Z5(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_XYZ, 0>(minlevel, norm);
@@ -965,7 +965,7 @@ bool TextureQuantizeX5Y6Z5(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantizeX5Z6Y5(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantizeX5Z6Y5(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_XZY, 0>(minlevel, norm);
@@ -973,7 +973,7 @@ bool TextureQuantizeX5Z6Y5(LPDIRECT3DTEXTURE *norm, int minlevel) {
   return res;
 }
 
-bool TextureQuantize_X5Y6Z5(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureQuantize_X5Y6Z5(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
   res = res && TextureQuantizeRAW<USHORT, float, TCOMPRESS_xyz, 0>(minlevel, norm);
@@ -988,7 +988,7 @@ bool TextureQuantize_X5Y6Z5(LPDIRECT3DTEXTURE *norm, int minlevel) {
 
 namespace squash {
 
-void _TextureQuantize(int minlevel, LPDIRECT3DTEXTURE *norm) {
+void _TextureQuantize(int minlevel, LPDIRECT3DBASETEXTURE *norm) {
   TextureQuantizeRAW<USHORT, long , TCOMPRESS_La  , 4>(minlevel, norm);
   TextureQuantizeRAW<USHORT, long , TCOMPRESS_LA  , 4>(minlevel, norm);
   TextureQuantizeRAW<USHORT, long , TCOMPRESS_LH  , 4>(minlevel, norm);

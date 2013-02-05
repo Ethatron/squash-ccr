@@ -45,7 +45,7 @@ void TextureMatte(RESOURCEINFO &texo, ULONG sPch, ULONG *sTex) {
 
     /**/ if (TCOMPRESS_NORMAL(format)) {
       /* forward/backward-z */
-      ULONG v = 0x00808000 | (TCOMPRESS_NINDEP(format) ? 0x00UL : 0xFFUL);
+      ULONG v = 0x00808000 + (TCOMPRESS_NINDEP(format) ? 0x00UL : 0xFFUL);
       ULONG c =              (TCOMPRESS_SIDES (format) ? 0x00UL : 0xFFUL) << 24;
 
 #if	defined(SQUASH_USE_AMP) && !defined(SQUASH_USE_AMP_DEBUG)
@@ -113,7 +113,7 @@ void TextureMatte(RESOURCEINFO &texo, ULONG sPch, ULONG *sTex) {
 	ULONG b = (t >>  0) & 0xFF; /*a*/
 
 	g = ((r * 5) + (g * 8) + (b * 3) + 8) >> 4;
-	t = (a << 24) | (g << 16) | (g << 8) | (g << 0);
+	t = (a << 24) + (g << 16) + (g << 8) + (g << 0);
 
 	sArr[elm] = t;
 #if	defined(SQUASH_USE_AMP) && !defined(SQUASH_USE_AMP_DEBUG)

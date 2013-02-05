@@ -77,9 +77,9 @@ static bool TextureCompressQDM(LPDIRECT3DTEXTURE *base, LPDIRECT3DTEXTURE *norm,
     return false;
 
   /* convert to ARGB8 (TODO: support at least the 16bit formats as well) */
-  if ((baseo.Format != TEXFMT_A8B8G8R8) && !TextureConvert(baseo, base, false))
+  if ((baseo.Format != TEXFMT_A8B8G8R8) && baseo.Format = TEXFMT_A8R8G8B8, !TextureConvert(baseo, base, false))
     return false;
-  if ((normo.Format != TEXFMT_A8B8G8R8) && !TextureConvert(normo, norm, true))
+  if ((normo.Format != TEXFMT_A8B8G8R8) && normo.Format = TEXFMT_A8R8G8B8, !TextureConvert(normo, norm, true))
     return false;
 
   /* create the textures */
@@ -122,7 +122,7 @@ static bool TextureCompressQDM(LPDIRECT3DTEXTURE *base, LPDIRECT3DTEXTURE *norm,
 
     TextureInfoLevel(baset, based, l);
     TextureInfoLevel(normt, normd, l);
-    
+
     ULONG sPch, *baser = TextureLock(baset, l, &sPch, true);
     ULONG nPch, *normr = TextureLock(normt, l, &nPch, true);
 
@@ -134,7 +134,7 @@ static bool TextureCompressQDM(LPDIRECT3DTEXTURE *base, LPDIRECT3DTEXTURE *norm,
     /* loop over 4x4-blocks of this level (DXT5) */
     for (unsigned int y = 0; y < based.Height; y += TY) {
       if (!(y & 0x3F)) {
-	logrf("line processed %d/%d of level %d/%d\r", y, based.Height, l, level);
+//	logrf("line processed %d/%d of level %d/%d\r", y, based.Height, l, level);
 
 //	PollProgress();
       }
@@ -166,8 +166,8 @@ static bool TextureCompressQDM(LPDIRECT3DTEXTURE *base, LPDIRECT3DTEXTURE *norm,
 
 	  /* transfer heightmap into the normal-map (overwrite) */
 	  if (LODed)
-	    n = (n & 0x00FFFFFF) | (b & 0xFF000000);
-	  
+	    n = (n & 0x00FFFFFF) + (b & 0xFF000000);
+
 	  { static const f<TCOMPRESS_RGBH> fmt; Accu(bs, b); }
 	  { static const f<TCOMPRESS_XYZD> fmt; Accu(nn, n); }
 
@@ -178,7 +178,7 @@ static bool TextureCompressQDM(LPDIRECT3DTEXTURE *base, LPDIRECT3DTEXTURE *norm,
 //	  AccuXYZD<ACCUMODE_SCALE >(nn, n, level, l, NORMALS_SCALEBYLEVEL);	// +=
 #endif
 	}
-	
+
 	/* build average of each channel */
 	{ const int format = TCOMPRESS_RGBH; Norm(fBase[0][ly][lx], bs, av, levels, l); }
 	{ const int format = TCOMPRESS_XYZD; Norm(fNorm[0][ly][lx], nn, av, levels, l); }
@@ -215,12 +215,12 @@ static bool TextureCompressQDM(LPDIRECT3DTEXTURE *base, LPDIRECT3DTEXTURE *norm,
 	/* build average of each channel an join */
 	UTYPE b;
 	ULONG n;
-	
-	{ const int format = TCOMPRESS_RGBH; 
+
+	{ const int format = TCOMPRESS_RGBH;
 	Code(fBase[0][ly][lx], br, (TCOMPRESS_CHANNELS(format) +
 				   (TCOMPRESS_GREYS   (format) ? 2 : 0)) == 2 ? 8 :
 				   (TCOMPRESS_SWIZZL  (format) ? 6 : 5)); }
-	{ const int format = TCOMPRESS_XYZD; 
+	{ const int format = TCOMPRESS_XYZD;
 	Code(fNorm[0][ly][lx], rn, (TCOMPRESS_CHANNELS(format) +
 				   (TCOMPRESS_GREYS   (format) ? 2 : 0)) == 2 ? 8 :
 				   (TCOMPRESS_SWIZZL  (format) ? 6 : 5)); }
@@ -251,8 +251,8 @@ static bool TextureCompressQDM(LPDIRECT3DTEXTURE *base, LPDIRECT3DTEXTURE *norm,
       stb_compress_dxt_block((unsigned char *)dBase, (unsigned char *)bBase[0], true, STB_DXT_DITHER | STB_DXT_HIGHQUAL);
       stb_compress_dxt_block((unsigned char *)dNorm, (unsigned char *)bNorm[0], true, STB_DXT_NORMAL | STB_DXT_HIGHQUAL);
 #else
-      squish::Compress((unsigned char *)bBase[0], dBase, flags | squish::kColourMetricPerceptual);
-      squish::Compress((unsigned char *)bNorm[0], dNorm, flags | squish::kColourMetricUniform);
+      squish::Compress((unsigned char *)bBase[0], dBase, flags + squish::kColourMetricPerceptual);
+      squish::Compress((unsigned char *)bNorm[0], dNorm, flags + squish::kColourMetricUniform);
 #endif
 
       /* advance pointer of compressed blocks */

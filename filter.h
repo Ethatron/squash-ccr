@@ -54,6 +54,16 @@
 #undef	NORMALS_FLOAT_XY_TANGENTSPACE
 #define	NORMALS_FLOAT_DXDY_TANGENTSPACE	0.5f
 
+#define	NORMALS_SIGNED_BIASf	(1.0f * 128.0f)
+#define	NORMALS_SIGNED_SCALEf	(1.0f / 127.0f)
+#define	NORMALS_SIGNED_BIASr	(1.0f * 128.0f)
+#define	NORMALS_SIGNED_SCALEr	(1.0f * 127.0f)
+
+#define	NORMALS_UNSIGNED_BIASf	(1.0f * 127.5f)
+#define	NORMALS_UNSIGNED_SCALEf	(1.0f / 127.5f)
+#define	NORMALS_UNSIGNED_BIASr	(1.0f * 127.5f)
+#define	NORMALS_UNSIGNED_SCALEr	(1.0f * 127.5f)
+
 /* http://diaryofagraphicsprogrammer.blogspot.com/2009/01/partial-derivative-normal-maps.html
  *
  * The idea is to store the paritial derivate of the normal in two channels of the map like this
@@ -116,7 +126,7 @@
 
 template<const int mode>
 static doinline void AccuRGBA(long (&bs)[DIM], const ULONG &b,
-				 const float colorgamma, const float alphacontrast) ccr_restricted {
+			      const float colorgamma, const float alphacontrast) ccr_restricted {
   /* separate the channels and build the sum */
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   __m128i *s = (__m128i *)bs;
@@ -142,7 +152,7 @@ static doinline void AccuRGBA(long (&bs)[DIM], const ULONG &b,
 
 template<const int mode>
 static doinline void AccuRGBH(long (&bs)[DIM], const ULONG &b,
-				 const float colorgamma) ccr_restricted {
+			      const float colorgamma) ccr_restricted {
   /* separate the channels and build the sum */
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   __m128i *s = (__m128i *)bs;
@@ -161,7 +171,7 @@ static doinline void AccuRGBH(long (&bs)[DIM], const ULONG &b,
 
 template<const int mode>
 static doinline void AccuRGBM(long (&bs)[DIM], const ULONG &b, int level, int l,
-				 const float colorgamma) ccr_restricted {
+			      const float colorgamma) ccr_restricted {
   /* separate the channels and build the sum */
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   __m128i *s = (__m128i *)bs;
@@ -188,15 +198,15 @@ static doinline void AccuRGBM(long (&bs)[DIM], const ULONG &b, int level, int l,
 
 template<const int mode>
 static doinline void AccuRGBA(longlong (&bs)[DIM], const ULONG &b,
-				 const float colorgamma, const float alphacontrast) ccr_restricted {
+			      const float colorgamma, const float alphacontrast) ccr_restricted {
   /* separate the channels and build the sum */
   long vec[4];
 
   /* ARGB -> RGBA */
-  vec[0] = (b >> 24) & 0xFF; vec[0] |= vec[0] << 8; /*a*/
-  vec[1] = (b >>  0) & 0xFF; vec[1] |= vec[1] << 8; /*b*/
-  vec[2] = (b >>  8) & 0xFF; vec[2] |= vec[2] << 8; /*g*/
-  vec[3] = (b >> 16) & 0xFF; vec[3] |= vec[3] << 8; /*r*/
+  vec[0] = (b >> 24) & 0xFF; vec[0] += vec[0] << 8; /*a*/
+  vec[1] = (b >>  0) & 0xFF; vec[1] += vec[1] << 8; /*b*/
+  vec[2] = (b >>  8) & 0xFF; vec[2] += vec[2] << 8; /*g*/
+  vec[3] = (b >> 16) & 0xFF; vec[3] += vec[3] << 8; /*r*/
 
   bs[0] += vec[0]; /*a*/
   bs[1] += vec[1]; /*b*/
@@ -206,15 +216,15 @@ static doinline void AccuRGBA(longlong (&bs)[DIM], const ULONG &b,
 
 template<const int mode>
 static doinline void AccuRGBH(longlong (&bs)[DIM], const ULONG &b,
-				 const float colorgamma) ccr_restricted {
+			      const float colorgamma) ccr_restricted {
   /* separate the channels and build the sum */
   long vec[4];
 
   /* HRGB -> RGBH */
-  vec[0] = (b >> 24) & 0xFF; vec[0] |= vec[0] << 8; /*h*/
-  vec[1] = (b >>  0) & 0xFF; vec[1] |= vec[1] << 8; /*b*/
-  vec[2] = (b >>  8) & 0xFF; vec[2] |= vec[2] << 8; /*g*/
-  vec[3] = (b >> 16) & 0xFF; vec[3] |= vec[3] << 8; /*r*/
+  vec[0] = (b >> 24) & 0xFF; vec[0] += vec[0] << 8; /*h*/
+  vec[1] = (b >>  0) & 0xFF; vec[1] += vec[1] << 8; /*b*/
+  vec[2] = (b >>  8) & 0xFF; vec[2] += vec[2] << 8; /*g*/
+  vec[3] = (b >> 16) & 0xFF; vec[3] += vec[3] << 8; /*r*/
 
   bs[0] += vec[0]; /*h*/
   bs[1] += vec[1]; /*b*/
@@ -224,15 +234,15 @@ static doinline void AccuRGBH(longlong (&bs)[DIM], const ULONG &b,
 
 template<const int mode>
 static doinline void AccuRGBM(longlong (&bs)[DIM], const ULONG &b, int level, int l,
-				 const float colorgamma) ccr_restricted {
+			      const float colorgamma) ccr_restricted {
   /* separate the channels and build the sum */
   long vec[4];
 
   /* MRGB -> RGBM */
-  vec[0] = (b >> 24) & 0xFF; vec[0] |= vec[0] << 8; /*m*/
-  vec[1] = (b >>  0) & 0xFF; vec[1] |= vec[1] << 8; /*b*/
-  vec[2] = (b >>  8) & 0xFF; vec[2] |= vec[2] << 8; /*g*/
-  vec[3] = (b >> 16) & 0xFF; vec[3] |= vec[3] << 8; /*r*/
+  vec[0] = (b >> 24) & 0xFF; vec[0] += vec[0] << 8; /*m*/
+  vec[1] = (b >>  0) & 0xFF; vec[1] += vec[1] << 8; /*b*/
+  vec[2] = (b >>  8) & 0xFF; vec[2] += vec[2] << 8; /*g*/
+  vec[3] = (b >> 16) & 0xFF; vec[3] += vec[3] << 8; /*r*/
 
   bs[0]  = qmax(bs[0],
            vec[0]); /*m*/
@@ -243,7 +253,7 @@ static doinline void AccuRGBM(longlong (&bs)[DIM], const ULONG &b, int level, in
 
 template<const int mode>
 static doinline void AccuRGBA(float (&bs)[DIM], const ULONG &b,
-				 const float colorgamma, const float alphacontrast) ccr_restricted {
+			      const float colorgamma, const float alphacontrast) ccr_restricted {
   /* separate the channels and build the sum */
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   const float rnrm = 1.0f / 0xFF;
@@ -332,7 +342,7 @@ static doinline void AccuRGBA(float (&bs)[DIM], const ULONG &b,
 
 template<const int mode>
 static doinline void AccuRGBH(float (&bs)[DIM], const ULONG &b,
-				 const float colorgamma) ccr_restricted {
+			      const float colorgamma) ccr_restricted {
   /* separate the channels and build the sum */
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   const float rnrm = 1.0f / 0xFF;
@@ -368,7 +378,7 @@ static doinline void AccuRGBH(float (&bs)[DIM], const ULONG &b,
 
 template<const int mode>
 static doinline void AccuRGBM(float (&bs)[DIM], const ULONG &b, int level, int l,
-				 const float colorgamma) ccr_restricted {
+			      const float colorgamma) ccr_restricted {
   /* separate the channels and build the sum */
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   const float rnrm = 1.0f / 0xFF;
@@ -450,19 +460,18 @@ static doinline void AccuXYZD(longlong (&ns)[DIM], const ULONG &n) ccr_restricte
 
 template<const int mode>
 static doinline void AccuXYZD(float (&nn)[DIM], const ULONG &n) ccr_restricted {
-#if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
-  const float rnrm = 1.0f / 0xFF;
+  const float hoff = -NORMALS_UNSIGNED_BIASf;
+  const float rnrm =  NORMALS_UNSIGNED_SCALEf;
 
+#if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   __m128 *o = (__m128 *)nn;
-  __m128 nm = _mm_set_ps(rnrm, rnrm, rnrm, rnrm);
-  __m128 hf = _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f);
-  __m128 db = _mm_set_ps(2.0f, 2.0f, 2.0f, 1.0f);
+  __m128 hf = _mm_set_ps(hoff, hoff, hoff, 0.0f);
+  __m128 nm = _mm_set_ps(rnrm, rnrm, rnrm, 1.0f);
   __m128 fu, ml, ln, l1, l2;
 
   fu = _qq_unpack_ps     (n);
-  ml = _mm_mul_ps        (fu, nm);
-  ml = _mm_sub_ps        (ml, hf);
-  ml = _mm_mul_ps        (ml, db);
+  ml = _mm_add_ps        (fu, hf);
+  ml = _mm_mul_ps        (ml, nm);
 
   /* prevent singularity */
   ln = _mm_mul_ps        (ml, ml);
@@ -481,14 +490,13 @@ static doinline void AccuXYZD(float (&nn)[DIM], const ULONG &n) ccr_restricted {
   ml = _mm_move_ss       (ml, fu);
   *o = _mm_add_ps        (*o, ml);
 #else
-  const float rnrm = 1.0f / 0xFF;
   float vec[4], len;
 
   /* DXYZ -> XYZD */
   vec[0] = (float)((n >> 24) & 0xFF);
-  vec[1] = (float)((n >>  0) & 0xFF); vec[1] *= rnrm; vec[1] -= 0.5f; vec[1] /= 0.5f;
-  vec[2] = (float)((n >>  8) & 0xFF); vec[2] *= rnrm; vec[2] -= 0.5f; vec[2] /= 0.5f;
-  vec[3] = (float)((n >> 16) & 0xFF); vec[3] *= rnrm; vec[3] -= 0.5f; vec[3] /= 0.5f;
+  vec[1] = (float)((n >>  0) & 0xFF); vec[1] += hoff; vec[1] *= rnrm;
+  vec[2] = (float)((n >>  8) & 0xFF); vec[2] += hoff; vec[2] *= rnrm;
+  vec[3] = (float)((n >> 16) & 0xFF); vec[3] += hoff; vec[3] *= rnrm;
 
   /* prevent singularity */
   len = vec[1] * vec[1] + vec[2] * vec[2] + vec[3] * vec[3];
@@ -520,14 +528,15 @@ static doinline void AccuXYCD(longlong (&nn)[DIM], const ULONG &n) ccr_restricte
 
 template<const int mode>
 static doinline void AccuXYCD(float (&nn)[DIM], const ULONG &n) ccr_restricted {
-  const float rnrm = 1.0f / 0xFF;
+  const float hoff = -NORMALS_UNSIGNED_BIASf;
+  const float rnrm =  NORMALS_UNSIGNED_SCALEf;
   float vec[5], len;
 
   /* DXYC -> XYCD */
   vec[0] = (float)((n >> 24) & 0xFF);
   vec[1] = (float)((n >>  0) & 0xFF);
-  vec[2] = (float)((n >>  8) & 0xFF); vec[2] *= rnrm; vec[2] -= 0.5f; vec[2] /= 0.5f;
-  vec[3] = (float)((n >> 16) & 0xFF); vec[3] *= rnrm; vec[3] -= 0.5f; vec[3] /= 0.5f;
+  vec[2] = (float)((n >>  8) & 0xFF); vec[2] += hoff; vec[2] *= rnrm;
+  vec[3] = (float)((n >> 16) & 0xFF); vec[3] += hoff; vec[3] *= rnrm;
   vec[4] = qsqrt(1.0f - qmin(1.0f, vec[2] * vec[2] + vec[3] * vec[3]));
 
   /* prevent singularity */
@@ -807,7 +816,7 @@ static doinline void NormRGBA(longlong (&obs)[DIM], longlong (&bs)[DIM], int av,
   /* build average of each channel an join */
   if ((mode & ACCUMODE_SCALE) && (l > 0)) {
     longlong bs_0_;
-    
+
     /* raise a every level */
     bs_0_  = bs[0];      /*a*/
     bs_0_ *= 2 + l;
@@ -1739,14 +1748,14 @@ static doinline void CodeXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricted
 
     if (mode & TRGTNORM_CUBESPACE) {
       float lnn = rsqrt(vec[2] * vec[2] + vec[3] * vec[3]);
-      float factor = (2.0f - qmax(vec[2] * lnn, vec[3] * lnn)) * len;
+      float factor = (2.0f - qmax(vec[2], vec[3]) * lnn) * len;
 
-      vec[1]  = 1.0f;
+      vec[1] *= len;
       vec[2] *= factor;
       vec[3] *= factor;
     }
     else {
-      vec[1]  = 1.0f;
+      vec[1] *= len;
       vec[2] *= len;
       vec[3] *= len;
     }
@@ -1768,7 +1777,7 @@ static doinline void CodeXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricted
 
     if (mode & TRGTNORM_CUBESPACE) {
       float lnn = rsqrt(vec[2] * vec[2] + vec[3] * vec[3]);
-      float factor = (2.0f - qmax(vec[2] * lnn, vec[3] * lnn)) * len;
+      float factor = (2.0f - qmax(vec[2], vec[3]) * lnn) * len;
 
       vec[1] *= len;
       vec[2] *= factor;
@@ -1827,19 +1836,18 @@ static doinline void CodeXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricted
 #endif
 }
 
-template<const int mode>
+template<const int mode, const int zprec>
 static doinline void CodeXYCD(long (&nn)[DIM], long (&nr)[DIM]) ccr_restricted {
   /* doesn't exist, just for fullfilling templated case */;
 }
 
-template<const int mode>
+template<const int mode, const int zprec>
 static doinline void CodeXYCD(longlong (&nn)[DIM], longlong (&nr)[DIM]) ccr_restricted {
   /* doesn't exist, just for fullfilling templated case */;
 }
 
-template<const int mode>
+template<const int mode, const int zprec>
 static doinline void CodeXYCD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricted {
-  ULONG n = 0;
   a16 float vec[8]; float len;
 
   vec[0] = nn[0];
@@ -1954,25 +1962,22 @@ static doinline void RangeXYZD(int (&no)[DIM], longlong (&ni)[DIM]) ccr_restrict
 
 template<const int mode>
 static doinline void RangeXYZD(int (&no)[DIM], float (&ni)[DIM]) ccr_restricted {
+  const float hoff = NORMALS_UNSIGNED_BIASr;
+  const float fnrm = NORMALS_UNSIGNED_SCALEr;
+
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   ULONG n = 0;
   a16 float vec[4];
 
   /* ################################################################# */
   /**/ if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZ) ||
-           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt)) {
-    *((__m128  *)vec) =
-      _mm_add_ps(
-      _mm_mul_ps(*ni, _mm_set_ps(0.5f, 0.5f, 0.5f, 1.0f)),
-                      _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f));
-  }
-  /* ################################################################# */
-  else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
+           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt) ||
+           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
            ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYt)) {
     *((__m128  *)vec) =
       _mm_add_ps(
-      _mm_mul_ps(*ni, _mm_set_ps(0.5f, 0.5f, 1.0f, 1.0f)),
-                      _mm_set_ps(0.5f, 0.5f, 0.0f, 0.0f));
+      _mm_mul_ps(*ni, _mm_set_ps(fnrm, fnrm, fnrm, 1.0f)),
+                      _mm_set_ps(hoff, hoff, hoff, 0.0f));
   }
   /* ################################################################# */
   else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYt) ||
@@ -1980,15 +1985,15 @@ static doinline void RangeXYZD(int (&no)[DIM], float (&ni)[DIM]) ccr_restricted 
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYDZt)) {
     *((__m128  *)vec) =
       _mm_add_ps(
-      _mm_mul_ps(*ni, _mm_set_ps(0.5f, 0.5f, 0.5f, 1.0f)),
-                      _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f));
+      _mm_mul_ps(*ni, _mm_set_ps(fnrm, fnrm, fnrm, 1.0f)),
+                      _mm_set_ps(hoff, hoff, hoff, 0.0f));
   }
   /* ################################################################# */
   else if ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_AZt) {
     *((__m128  *)vec) =
       _mm_add_ps(
-      _mm_mul_ps(*ni, _mm_set_ps(1.0f, 0.5f, 1.0f, 1.0f)),
-                      _mm_set_ps(0.0f, 0.5f, 0.0f, 0.0f));
+      _mm_mul_ps(*ni, _mm_set_ps(0xFF, fnrm, 1.0f, 1.0f)),
+                      _mm_set_ps(0x00, hoff, 0.0f, 0.0f));
   }
 #else
   ULONG n = 0;
@@ -2001,29 +2006,25 @@ static doinline void RangeXYZD(int (&no)[DIM], float (&ni)[DIM]) ccr_restricted 
 
   /* ################################################################# */
   /**/ if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZ) ||
-	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt)) {
-    vec[1] *= 0.5f; vec[1] += 0.5f;
-    vec[2] *= 0.5f; vec[2] += 0.5f;
-    vec[3] *= 0.5f; vec[3] += 0.5f;
-  }
-  /* ################################################################# */
-  else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
+	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt) ||
+	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYt)) {
-    vec[2] *= 0.5f; vec[2] += 0.5f;
-    vec[3] *= 0.5f; vec[3] += 0.5f;
+    vec[1] *= fnrm; vec[1] += hoff;
+    vec[2] *= fnrm; vec[2] += hoff;
+    vec[3] *= fnrm; vec[3] += hoff;
   }
   /* ################################################################# */
   else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYt) ||
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYdZt) ||
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYDZt)) {
-    vec[1] *= 0.5f; vec[1] += 0.5f;
-    vec[2] *= 0.5f; vec[2] += 0.5f;
-    vec[3] *= 0.5f; vec[3] += 0.5f;
+    vec[1] *= fnrm; vec[1] += hoff;
+    vec[2] *= fnrm; vec[2] += hoff;
+    vec[3] *= fnrm; vec[3] += hoff;
   }
   /* ################################################################# */
   else if ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_AZt) {
-    vec[1] *= 1.0f; vec[1] += 0.0f;
-    vec[2] *= 0.5f; vec[2] += 0.5f;
+    vec[1] *= 0xFF; vec[1] += 0x00;
+    vec[2] *= fnrm; vec[2] += hoff;
   }
 #endif
 
@@ -2036,16 +2037,13 @@ static doinline void RangeXYZD(int (&no)[DIM], float (&ni)[DIM]) ccr_restricted 
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
     __m128i *o = (__m128i *)no;
     __m128  *v = (__m128  *)vec;
-    __m128 rv = _mm_set_ps(0xFF, 0xFF, 0xFF, 0x01);
-    __m128 ml;
 
-    ml = _mm_mul_ps(*v, rv);
-    *o = _qq_rint_ps<0xFF>(ml);
+    *o = _qq_rint_ps<0xFF>(*v);
 #else
-    no[0] = rint<0xFF>(vec[0] * 0x01); /*d[ 0,1]*/
-    no[1] = sint<0xFF>(vec[1] * 0xFF); /*z[-1,1]*/
-    no[2] = sint<0xFF>(vec[2] * 0xFF); /*y[-1,1]*/
-    no[3] = sint<0xFF>(vec[3] * 0xFF); /*x[-1,1]*/
+    no[0] = rint<0xFF>(vec[0]); /*d[ 0,1]*/
+    no[1] = sint<0xFF>(vec[1]); /*z[-1,1]*/
+    no[2] = sint<0xFF>(vec[2]); /*y[-1,1]*/
+    no[3] = sint<0xFF>(vec[3]); /*x[-1,1]*/
 #endif
   }
   else {
@@ -2055,19 +2053,20 @@ static doinline void RangeXYZD(int (&no)[DIM], float (&ni)[DIM]) ccr_restricted 
 	     bestp[4];
     a16 float bbox[DIM];
     a16 float best;
-
+    
     /* the original vector in up-scaled quantized space (half-normal, length 0.5) */
-    normal[3] = (vec[3] - 0.5f) * 0xFFL;
-    normal[2] = (vec[2] - 0.5f) * 0xFFL;
-    normal[1] = (vec[1] - 0.5f) * 0xFFL;
+    normal[3] = (vec[3] - hoff);
+    normal[2] = (vec[2] - hoff);
+    normal[1] = (vec[1] - hoff);
 
     /* the quantized opposing corner vectors in up-scaled quantized space */
-    sides[3][0] = qfloor(normal[3]);
-    sides[2][0] = qfloor(normal[2]);
-    sides[1][0] = qfloor(normal[1]);
-    sides[3][1] = min(sides[3][0] + 1, 0x7F);
-    sides[2][1] = min(sides[2][0] + 1, 0x7F);
-    sides[1][1] = min(sides[1][0] + 1, 0x7F);
+    sides[3][0] = qfloor(normal[3] - 0.5f) * 2 + 1;
+    sides[2][0] = qfloor(normal[2] - 0.5f) * 2 + 1;
+    sides[1][0] = qfloor(normal[1] - 0.5f) * 2 + 1;
+    /* walk only on the odd lattice */
+    sides[3][1] = min(sides[3][0] + 2, 0xFFL);
+    sides[2][1] = min(sides[2][0] + 2, 0xFFL);
+    sides[1][1] = min(sides[1][0] + 2, 0xFFL);
 
 #define	qcpy(a, b)    a[3] = b[3] , a[2] = b[2] , a[1] = b[1]
 #define	qlen(z,y,x)   z[3] * z[3] + y[2] * y[2] + x[1] * x[1]
@@ -2092,24 +2091,30 @@ static doinline void RangeXYZD(int (&no)[DIM], float (&ni)[DIM]) ccr_restricted 
     bbox[1] = qdot(normal, sides, 0, 0, 1); if (best < bbox[1]) best = bbox[1], qcpy(bestp, sidep);
     bbox[2] = qdot(normal, sides, 0, 1, 0); if (best < bbox[2]) best = bbox[2], qcpy(bestp, sidep);
     bbox[3] = qdot(normal, sides, 0, 1, 1); if (best < bbox[3]) best = bbox[3], qcpy(bestp, sidep);
+    
+    // for this Z isn't allowd to move
+    if ((mode & TRGTMODE_CODING) != TRGTMODE_CODING_DXDYt) {
+
     bbox[4] = qdot(normal, sides, 1, 0, 0); if (best < bbox[4]) best = bbox[4], qcpy(bestp, sidep);
     bbox[5] = qdot(normal, sides, 1, 0, 1); if (best < bbox[5]) best = bbox[5], qcpy(bestp, sidep);
     bbox[6] = qdot(normal, sides, 1, 1, 0); if (best < bbox[6]) best = bbox[6], qcpy(bestp, sidep);
     bbox[7] = qdot(normal, sides, 1, 1, 1); if (best < bbox[7]) best = bbox[7], qcpy(bestp, sidep);
+
+    }
 
 #undef	qcpy
 #undef	qlen
 #undef	qdot
 
     /* put the 0.5 back (8 bit -> 0x80 etc.) */
-    bestp[1] += 0x80L;
-    bestp[2] += 0x80L;
-    bestp[3] += 0x80L;
+    bestp[1] = ((bestp[1] - 1) >> 1) + (0xFFL - (0xFFL >> 1));
+    bestp[2] = ((bestp[2] - 1) >> 1) + (0xFFL - (0xFFL >> 1));
+    bestp[3] = ((bestp[3] - 1) >> 1) + (0xFFL - (0xFFL >> 1));
 
-    no[0] =    rint<0xFF>(vec[0] * 0x01)   ; /*d[ 0,1]*/
-    no[1] = qmax(qmin(bestp[1], 0xFFL), 0L); /*z[-1,1]*/
-    no[2] = qmax(qmin(bestp[2], 0xFFL), 0L); /*y[-1,1]*/
-    no[3] = qmax(qmin(bestp[3], 0xFFL), 0L); /*x[-1,1]*/
+    no[0] = rint<0xFF>(vec[0]); /*d[ 0,1]*/
+    no[1] = qmax(bestp[1], 0L); /*z[-1,1]*/
+    no[2] = qmax(bestp[2], 0L); /*y[-1,1]*/
+    no[3] = qmax(bestp[3], 0L); /*x[-1,1]*/
   }
 }
 
@@ -2125,6 +2130,9 @@ static doinline void RangeXYCD(int (&no)[DIM], longlong (&ni)[DIM]) ccr_restrict
 
 template<const int mode>
 static doinline void RangeXYCD(int (&no)[DIM], float (&ni)[DIM]) ccr_restricted {
+  const float hoff = NORMALS_UNSIGNED_BIASr;
+  const float fnrm = NORMALS_UNSIGNED_SCALEr;
+
   ULONG n = 0;
   a16 float vec[4];
 
@@ -2136,22 +2144,20 @@ static doinline void RangeXYCD(int (&no)[DIM], float (&ni)[DIM]) ccr_restricted 
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   __m128i *o = (__m128i *)no;
   __m128  *v = (__m128  *)vec;
-  __m128 h = _mm_set_ps(0.5f, 0.5f, 0.5f, 1.0f);
-  __m128 o = _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f);
-  __m128 r = _mm_set_ps(0xFF, 0xFF, 0x01, 0x01);
+  __m128 h = _mm_set_ps(fnrm, fnrm, 0x01, 0x01);
+  __m128 o = _mm_set_ps(hoff, hoff, 0x00, 0x00);
   __m128 m;
 
   m = _mm_add_ps(_mm_mul_ps(*v, h), o);
-  m = _mm_mul_ps(*v, r);
   *o = _qq_rint_ps<0xFF>(m);
 #else
-  vec[2] *= 0.5f; vec[2] += 0.5f;
-  vec[3] *= 0.5f; vec[3] += 0.5f;
+  vec[2] *= fnrm; vec[2] += hoff;
+  vec[3] *= fnrm; vec[3] += hoff;
 
-  no[0] = rint<0xFF>(vec[0] * 0x01); /*d[ 0,1]*/
-  no[1] = rint<0xFF>(vec[1] * 0x01); /*c[-1,1]*/
-  no[2] = sint<0xFF>(vec[2] * 0xFF); /*y[-1,1]*/
-  no[3] = sint<0xFF>(vec[3] * 0xFF); /*x[-1,1]*/
+  no[0] = rint<0xFF>(vec[0]); /*d[ 0,1]*/
+  no[1] = rint<0xFF>(vec[1]); /*c[-1,1]*/
+  no[2] = sint<0xFF>(vec[2]); /*y[-1,1]*/
+  no[3] = sint<0xFF>(vec[3]); /*x[-1,1]*/
 #endif
 }
 
@@ -2169,10 +2175,10 @@ static doinline ULONG JoinRGBA(long (&bs)[DIM], long (&br)[DIM]) ccr_restricted 
   ULONG b = 0;
 
   /* RGBA -> ABGR */
-  b |= (bs[0] << 24); /*a*/
-  b |= (bs[1] << 16); /*b*/
-  b |= (bs[2] <<  8); /*g*/
-  b |= (bs[3] <<  0); /*r*/
+  b += (bs[0] << 24); /*a*/
+  b += (bs[1] << 16); /*b*/
+  b += (bs[2] <<  8); /*g*/
+  b += (bs[3] <<  0); /*r*/
 
   return b;
 #endif
@@ -2189,10 +2195,10 @@ static doinline ULONG JoinRGBH(long (&bs)[DIM], long (&br)[DIM]) ccr_restricted 
   ULONG b = 0;
 
   /* RGBH -> HBGR */
-  b |= (bs[0] << 24); /*h*/
-  b |= (bs[1] << 16); /*b*/
-  b |= (bs[2] <<  8); /*g*/
-  b |= (bs[3] <<  0); /*r*/
+  b += (bs[0] << 24); /*h*/
+  b += (bs[1] << 16); /*b*/
+  b += (bs[2] <<  8); /*g*/
+  b += (bs[3] <<  0); /*r*/
 
   return b;
 #endif
@@ -2219,10 +2225,10 @@ static doinline ULONG JoinRGBA(float (&bs)[DIM], float (&br)[DIM]) ccr_restricte
   ULONG b = 0;
 
   /* RGBA -> ABGR */
-  b |= (rint<0xFF>(bs[0]) << 24); /*a[ 0,1]*/
-  b |= (rint<0xFF>(bs[1]) << 16); /*b[-1,1]*/
-  b |= (rint<0xFF>(bs[2]) <<  8); /*g[-1,1]*/
-  b |= (rint<0xFF>(bs[3]) <<  0); /*r[-1,1]*/
+  b += (rint<0xFF>(bs[0]) << 24); /*a[ 0,1]*/
+  b += (rint<0xFF>(bs[1]) << 16); /*b[ 0,1]*/
+  b += (rint<0xFF>(bs[2]) <<  8); /*g[ 0,1]*/
+  b += (rint<0xFF>(bs[3]) <<  0); /*r[ 0,1]*/
 
   return b;
 #endif
@@ -2239,10 +2245,10 @@ static doinline ULONG JoinRGBH(float (&bs)[DIM], float (&br)[DIM]) ccr_restricte
   ULONG b = 0;
 
   /* RGBH -> HBGR */
-  b |= (rint<0xFF>(bs[0]) << 24); /*h[ 0,1]*/
-  b |= (rint<0xFF>(bs[1]) << 16); /*b[-1,1]*/
-  b |= (rint<0xFF>(bs[2]) <<  8); /*g[-1,1]*/
-  b |= (rint<0xFF>(bs[3]) <<  0); /*r[-1,1]*/
+  b += (rint<0xFF>(bs[0]) << 24); /*h[ 0,1]*/
+  b += (rint<0xFF>(bs[1]) << 16); /*b[ 0,1]*/
+  b += (rint<0xFF>(bs[2]) <<  8); /*g[ 0,1]*/
+  b += (rint<0xFF>(bs[3]) <<  0); /*r[ 0,1]*/
 
   return b;
 #endif
@@ -2262,10 +2268,10 @@ static doinline ULONG JoinXYZD(long (&ns)[DIM], long (&nr)[DIM]) ccr_restricted 
   ULONG n = 0;
 
   /* XYZD -> DZYX */
-  n |= (ns[0] + 0x00) << 24; /*d[ 0,1]*/
-  n |= (ns[1] + 0x80) << 16; /*z[-1,1]*/
-  n |= (ns[2] + 0x80) <<  8; /*y[-1,1]*/
-  n |= (ns[3] + 0x80) <<  0; /*x[-1,1]*/
+  n += (ns[0] + 0x00) << 24; /*d[ 0,1]*/
+  n += (ns[1] + 0x80) << 16; /*z[-1,1]*/
+  n += (ns[2] + 0x80) <<  8; /*y[-1,1]*/
+  n += (ns[3] + 0x80) <<  0; /*x[-1,1]*/
 
   return n;
 #endif
@@ -2277,35 +2283,32 @@ static doinline ULONG JoinXYZD(longlong (&ns)[DIM], longlong (&nr)[DIM]) ccr_res
   ULONG n = 0;
 
   /* XYZD -> DZYX */
-  n |= (ns[0] + 0x00) << 24; /*d[ 0,1]*/
-  n |= (ns[1] + 0x80) << 16; /*z[-1,1]*/
-  n |= (ns[2] + 0x80) <<  8; /*y[-1,1]*/
-  n |= (ns[3] + 0x80) <<  0; /*x[-1,1]*/
+  n += (ns[0] + 0x00) << 24; /*d[ 0,1]*/
+  n += (ns[1] + 0x80) << 16; /*z[-1,1]*/
+  n += (ns[2] + 0x80) <<  8; /*y[-1,1]*/
+  n += (ns[3] + 0x80) <<  0; /*x[-1,1]*/
 
   return n;
 }
 
 template<const int mode>
 static doinline ULONG JoinXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricted {
+  const float hoff = NORMALS_UNSIGNED_BIASr;
+  const float fnrm = NORMALS_UNSIGNED_SCALEr;
+
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   ULONG n = 0;
   a16 float vec[4];
 
   /* ################################################################# */
   /**/ if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZ) ||
-	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt)) {
-    *((__m128  *)vec) =
-      _mm_add_ps(
-      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(0.5f, 0.5f, 0.5f, 1.0f)),
-                                   _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f));
-  }
-  /* ################################################################# */
-  else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
+	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt) ||
+	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYt)) {
     *((__m128  *)vec) =
       _mm_add_ps(
-      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(0.5f, 0.5f, 1.0f, 1.0f)),
-                                   _mm_set_ps(0.5f, 0.5f, 0.0f, 0.0f));
+      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(fnrm, fnrm, fnrm, 1.0f)),
+                                   _mm_set_ps(hoff, hoff, hoff, 0.0f));
   }
   /* ################################################################# */
   else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYt) ||
@@ -2313,15 +2316,15 @@ static doinline ULONG JoinXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYDZt)) {
     *((__m128  *)vec) =
       _mm_add_ps(
-      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(0.5f, 0.5f, 0.5f, 1.0f)),
-                                   _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f));
+      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(fnrm, fnrm, fnrm, 1.0f)),
+                                   _mm_set_ps(hoff, hoff, hoff, 0.0f));
   }
   /* ################################################################# */
   else if ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_AZt) {
     *((__m128  *)vec) =
       _mm_add_ps(
-      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(1.0f, 0.5f, 1.0f, 1.0f)),
-                                   _mm_set_ps(0.0f, 0.5f, 0.0f, 0.0f));
+      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(0xFF, fnrm, 1.0f, 1.0f)),
+                                   _mm_set_ps(0x00, hoff, 0.0f, 0.0f));
   }
 #else
   ULONG n = 0;
@@ -2334,36 +2337,32 @@ static doinline ULONG JoinXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
 
   /* ################################################################# */
   /**/ if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZ) ||
-           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt)) {
-    vec[1] *= 0.5f; vec[1] += 0.5f;
-    vec[2] *= 0.5f; vec[2] += 0.5f;
-    vec[3] *= 0.5f; vec[3] += 0.5f;
-  }
-  /* ################################################################# */
-  else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
+           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt) ||
+           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
            ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYt)) {
-    vec[2] *= 0.5f; vec[2] += 0.5f;
-    vec[3] *= 0.5f; vec[3] += 0.5f;
+    vec[1] *= fnrm; vec[1] += hoff;
+    vec[2] *= fnrm; vec[2] += hoff;
+    vec[3] *= fnrm; vec[3] += hoff;
   }
   /* ################################################################# */
   else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYt) ||
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYdZt) ||
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYDZt)) {
     if (mode & TRGTNORM_CUBESPACE) {
-      vec[1] *= 0.5f; vec[1] += 0.5f;
-      vec[2] *= 0.5f; vec[2] += 0.5f;
-      vec[3] *= 0.5f; vec[3] += 0.5f;
+      vec[1] *= fnrm; vec[1] += hoff;
+      vec[2] *= fnrm; vec[2] += hoff;
+      vec[3] *= fnrm; vec[3] += hoff;
     }
     else {
-      vec[1] *= 0.5f; vec[1] += 0.5f;
-      vec[2] *= 0.5f; vec[2] += 0.5f;
-      vec[3] *= 0.5f; vec[3] += 0.5f;
+      vec[1] *= fnrm; vec[1] += hoff;
+      vec[2] *= fnrm; vec[2] += hoff;
+      vec[3] *= fnrm; vec[3] += hoff;
     }
   }
   /* ################################################################# */
   else if ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_AZt) {
-    vec[1] *= 1.0f; vec[1] += 0.0f;
-    vec[2] *= 0.5f; vec[2] += 0.5f;
+    vec[1] *= 0xFF; vec[1] += 0x00;
+    vec[2] *= fnrm; vec[2] += hoff;
   }
 #endif
 
@@ -2375,17 +2374,14 @@ static doinline ULONG JoinXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
       ((mode & TRGTMODE_CODING) != TRGTMODE_CODING_DXDYDZt)) {
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
     __m128 *v = (__m128 *)vec;
-    __m128 r = _mm_set_ps(0xFF, 0xFF, 0xFF, 0x01);
-    __m128 m;
 
-    m = _mm_mul_ps(*v, r);
-    n = _qq_pack_ps(m);
+    n = _qq_pack_ps(*v);
 #else
     /* XYZD -> DZYX */
-    n |= (rint<0xFF>(vec[0] * 0x01) << 24); /*d[ 0,1]*/
-    n |= (sint<0xFF>(vec[1] * 0xFF) << 16); /*z[-1,1]*/
-    n |= (sint<0xFF>(vec[2] * 0xFF) <<  8); /*y[-1,1]*/
-    n |= (sint<0xFF>(vec[3] * 0xFF) <<  0); /*x[-1,1]*/
+    n += (rint<0xFF>(vec[0]) << 24); /*d[ 0,1]*/
+    n += (sint<0xFF>(vec[1]) << 16); /*z[-1,1]*/
+    n += (sint<0xFF>(vec[2]) <<  8); /*y[-1,1]*/
+    n += (sint<0xFF>(vec[3]) <<  0); /*x[-1,1]*/
 #endif
   }
   else {
@@ -2395,19 +2391,20 @@ static doinline ULONG JoinXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
 	     bestp[4];
     a16 float bbox[DIM];
     a16 float best;
-
+    
     /* the original vector in up-scaled quantized space (half-normal, length 0.5) */
-    normal[3] = (vec[3] - 0.5f) * 0xFFL;
-    normal[2] = (vec[2] - 0.5f) * 0xFFL;
-    normal[1] = (vec[1] - 0.5f) * 0xFFL;
+    normal[3] = (vec[3] - hoff);
+    normal[2] = (vec[2] - hoff);
+    normal[1] = (vec[1] - hoff);
 
     /* the quantized opposing corner vectors in up-scaled quantized space */
-    sides[3][0] = qfloor(normal[3]);
-    sides[2][0] = qfloor(normal[2]);
-    sides[1][0] = qfloor(normal[1]);
-    sides[3][1] = min(sides[3][0] + 1, 0x7F);
-    sides[2][1] = min(sides[2][0] + 1, 0x7F);
-    sides[1][1] = min(sides[1][0] + 1, 0x7F);
+    sides[3][0] = qfloor(normal[3] - 0.5f) * 2 + 1;
+    sides[2][0] = qfloor(normal[2] - 0.5f) * 2 + 1;
+    sides[1][0] = qfloor(normal[1] - 0.5f) * 2 + 1;
+    /* walk only on the odd lattice */
+    sides[3][1] = min(sides[3][0] + 2, 0xFFL);
+    sides[2][1] = min(sides[2][0] + 2, 0xFFL);
+    sides[1][1] = min(sides[1][0] + 2, 0xFFL);
 
 #define	qcpy(a, b)    a[3] = b[3] , a[2] = b[2] , a[1] = b[1]
 #define	qlen(z,y,x)   z[3] * z[3] + y[2] * y[2] + x[1] * x[1]
@@ -2448,15 +2445,15 @@ static doinline ULONG JoinXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
 #undef	qdot
 
     /* put the 0.5 back (8 bit -> 0x80 etc.) */
-    bestp[1] += 0x80L;
-    bestp[2] += 0x80L;
-    bestp[3] += 0x80L;
+    bestp[1] = ((bestp[1] - 1) >> 1) + (0xFFL - (0xFFL >> 1));
+    bestp[2] = ((bestp[2] - 1) >> 1) + (0xFFL - (0xFFL >> 1));
+    bestp[3] = ((bestp[3] - 1) >> 1) + (0xFFL - (0xFFL >> 1));
 
     /* XYZD -> DZYX */
-    n |=    rint<0xFF>(vec[0] * 0x01)    << 24; /*d[ 0,1]*/
-    n |= qmax(qmin(bestp[1], 0xFFL), 0L) << 16; /*z[-1,1]*/
-    n |= qmax(qmin(bestp[2], 0xFFL), 0L) <<  8; /*y[-1,1]*/
-    n |= qmax(qmin(bestp[3], 0xFFL), 0L) <<  0; /*x[-1,1]*/
+    n += rint<0xFF>(vec[0]) << 24; /*d[ 0,1]*/
+    n += qmax(bestp[1], 0L) << 16; /*z[-1,1]*/
+    n += qmax(bestp[2], 0L) <<  8; /*y[-1,1]*/
+    n += qmax(bestp[3], 0L) <<  0; /*x[-1,1]*/
   }
 
   return n;
@@ -2474,6 +2471,9 @@ static doinline ULONG JoinXYCD(longlong (&nn)[DIM], longlong (&nr)[DIM]) ccr_res
 
 template<const int mode>
 static doinline ULONG JoinXYCD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricted {
+  const float hoff = NORMALS_UNSIGNED_BIASr;
+  const float fnrm = NORMALS_UNSIGNED_SCALEr;
+
   ULONG n = 0;
   a16 float vec[4];
 
@@ -2484,23 +2484,21 @@ static doinline ULONG JoinXYCD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
 
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   __m128 *v = (__m128 *)vec;
-  __m128 h = _mm_set_ps(0.5f, 0.5f, 0.5f, 1.0f);
-  __m128 o = _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f);
-  __m128 r = _mm_set_ps(0xFF, 0xFF, 0x01, 0x01);
+  __m128 h = _mm_set_ps(fnrm, fnrm, 1.0f, 1.0f);
+  __m128 o = _mm_set_ps(hoff, hoff, 0.0f, 0.0f);
   __m128 m;
 
   m = _mm_add_ps(_mm_mul_ps(*v, h), o);
-  m = _mm_mul_ps(*v, r);
   n = _qq_pack_ps(m);
 #else
-  vec[2] *= 0.5f; vec[2] += 0.5f;
-  vec[3] *= 0.5f; vec[3] += 0.5f;
+  vec[2] *= fnrm; vec[2] += hoff;
+  vec[3] *= fnrm; vec[3] += hoff;
 
   /* XYCD -> DCYX */
-  n |= (rint<0xFF>(vec[0] * 0x01) << 24); /*d[ 0,1]*/
-  n |= (rint<0xFF>(vec[1] * 0x01) << 16); /*c[-1,1]*/
-  n |= (sint<0xFF>(vec[2] * 0xFF) <<  8); /*y[-1,1]*/
-  n |= (sint<0xFF>(vec[3] * 0xFF) <<  0); /*x[-1,1]*/
+  n += (rint<0xFF>(vec[0]) << 24); /*d[ 0,1]*/
+  n += (rint<0xFF>(vec[1]) << 16); /*c[-1,1]*/
+  n += (sint<0xFF>(vec[2]) <<  8); /*y[-1,1]*/
+  n += (sint<0xFF>(vec[3]) <<  0); /*x[-1,1]*/
 #endif
 
   return n;
@@ -2516,10 +2514,10 @@ static doinline ULONG QuntRGBA(long (&bs)[DIM], long (&br)[DIM]) ccr_restricted 
   ULONG b = 0;
 
   /* RGBA -> ARGB */
-  b <<= A; b |= (bs[0] >> (8 - A)); /*a*/
-  b <<= R; b |= (bs[3] >> (8 - R)); /*r*/
-  b <<= G; b |= (bs[2] >> (8 - G)); /*g*/
-  b <<= B; b |= (bs[1] >> (8 - B)); /*b*/
+  b <<= A; b += (bs[0] >> (8 - A)); /*a*/
+  b <<= R; b += (bs[3] >> (8 - R)); /*r*/
+  b <<= G; b += (bs[2] >> (8 - G)); /*g*/
+  b <<= B; b += (bs[1] >> (8 - B)); /*b*/
 
   return b;
 }
@@ -2530,10 +2528,10 @@ static doinline ULONG QuntRGBH(long (&bs)[DIM], long (&br)[DIM]) ccr_restricted 
   ULONG b = 0;
 
   /* RGBH -> HRGB */
-  b <<= H; b |= (bs[0] >> (8 - H)); /*h*/
-  b <<= R; b |= (bs[3] >> (8 - R)); /*r*/
-  b <<= G; b |= (bs[2] >> (8 - G)); /*g*/
-  b <<= B; b |= (bs[1] >> (8 - B)); /*b*/
+  b <<= H; b += (bs[0] >> (8 - H)); /*h*/
+  b <<= R; b += (bs[3] >> (8 - R)); /*r*/
+  b <<= G; b += (bs[2] >> (8 - G)); /*g*/
+  b <<= B; b += (bs[1] >> (8 - B)); /*b*/
 
   return b;
 }
@@ -2544,10 +2542,10 @@ static doinline ULONG QuntRGBA(longlong (&bs)[DIM], longlong (&br)[DIM]) ccr_res
   ULONG b = 0;
 
   /* RGBA -> ARGB */
-  b <<= A; b |= (bs[0] >> (16 - A)); /*a*/
-  b <<= R; b |= (bs[3] >> (16 - R)); /*r*/
-  b <<= G; b |= (bs[2] >> (16 - G)); /*g*/
-  b <<= B; b |= (bs[1] >> (16 - B)); /*b*/
+  b <<= A; b += (ULONG)(bs[0] >> (16 - A)); /*a*/
+  b <<= R; b += (ULONG)(bs[3] >> (16 - R)); /*r*/
+  b <<= G; b += (ULONG)(bs[2] >> (16 - G)); /*g*/
+  b <<= B; b += (ULONG)(bs[1] >> (16 - B)); /*b*/
 
   return b;
 }
@@ -2558,10 +2556,10 @@ static doinline ULONG QuntRGBH(longlong (&bs)[DIM], longlong (&br)[DIM]) ccr_res
   ULONG b = 0;
 
   /* RGBH -> HRGB */
-  b <<= H; b |= (bs[0] >> (16 - H)); /*h*/
-  b <<= R; b |= (bs[3] >> (16 - R)); /*r*/
-  b <<= G; b |= (bs[2] >> (16 - G)); /*g*/
-  b <<= B; b |= (bs[1] >> (16 - B)); /*b*/
+  b <<= H; b += (ULONG)(bs[0] >> (16 - H)); /*h*/
+  b <<= R; b += (ULONG)(bs[3] >> (16 - R)); /*r*/
+  b <<= G; b += (ULONG)(bs[2] >> (16 - G)); /*g*/
+  b <<= B; b += (ULONG)(bs[1] >> (16 - B)); /*b*/
 
   return b;
 }
@@ -2573,10 +2571,10 @@ static doinline ULONG QuntRGBA(float (&bs)[DIM], float (&br)[DIM]) ccr_restricte
   ULONG b = 0;
 
   /* RGBA -> ARGB */
-  b <<= A; b |= (rint<(1 << A) - 1>(bs[0] * ((1 << A) - 1) * rnrm)); /*a[ 0,1]*/
-  b <<= R; b |= (rint<(1 << R) - 1>(bs[3] * ((1 << R) - 1) * rnrm)); /*r[-1,1]*/
-  b <<= G; b |= (rint<(1 << G) - 1>(bs[2] * ((1 << G) - 1) * rnrm)); /*g[-1,1]*/
-  b <<= B; b |= (rint<(1 << B) - 1>(bs[1] * ((1 << B) - 1) * rnrm)); /*b[-1,1]*/
+  b <<= A; b += (rint<(1 << A) - 1>(bs[0] * ((1 << A) - 1) * rnrm)); /*a[ 0,1]*/
+  b <<= R; b += (rint<(1 << R) - 1>(bs[3] * ((1 << R) - 1) * rnrm)); /*r[ 0,1]*/
+  b <<= G; b += (rint<(1 << G) - 1>(bs[2] * ((1 << G) - 1) * rnrm)); /*g[ 0,1]*/
+  b <<= B; b += (rint<(1 << B) - 1>(bs[1] * ((1 << B) - 1) * rnrm)); /*b[ 0,1]*/
 
   return b;
 }
@@ -2588,10 +2586,10 @@ static doinline ULONG QuntRGBH(float (&bs)[DIM], float (&br)[DIM]) ccr_restricte
   ULONG b = 0;
 
   /* RGBH -> HRGB */
-  b <<= H; b |= (rint<(1 << H) - 1>(bs[0] * ((1 << H) - 1) * rnrm)); /*h[ 0,1]*/
-  b <<= R; b |= (rint<(1 << R) - 1>(bs[3] * ((1 << R) - 1) * rnrm)); /*r[-1,1]*/
-  b <<= G; b |= (rint<(1 << G) - 1>(bs[2] * ((1 << G) - 1) * rnrm)); /*g[-1,1]*/
-  b <<= B; b |= (rint<(1 << B) - 1>(bs[1] * ((1 << B) - 1) * rnrm)); /*b[-1,1]*/
+  b <<= H; b += (rint<(1 << H) - 1>(bs[0] * ((1 << H) - 1) * rnrm)); /*h[ 0,1]*/
+  b <<= R; b += (rint<(1 << R) - 1>(bs[3] * ((1 << R) - 1) * rnrm)); /*r[ 0,1]*/
+  b <<= G; b += (rint<(1 << G) - 1>(bs[2] * ((1 << G) - 1) * rnrm)); /*g[ 0,1]*/
+  b <<= B; b += (rint<(1 << B) - 1>(bs[1] * ((1 << B) - 1) * rnrm)); /*b[ 0,1]*/
 
   return b;
 }
@@ -2602,10 +2600,10 @@ static doinline ULONG QuntXYZD(long (&ns)[DIM], long (&nr)[DIM]) ccr_restricted 
   ULONG n = 0;
 
   /* XYZD -> DXYZ */
-  n <<= D; n |= ((ns[0] + 0x00) >> (8 - D)); /*d*/
-  n <<= X; n |= ((ns[3] + 0x80) >> (8 - X)); /*x*/
-  n <<= Y; n |= ((ns[2] + 0x80) >> (8 - Y)); /*y*/
-  n <<= Z; n |= ((ns[1] + 0x80) >> (8 - Z)); /*z*/
+  n <<= D; n += ((ns[0] + 0x00) >> (8 - D)); /*d*/
+  n <<= X; n += ((ns[3] + 0x80) >> (8 - X)); /*x*/
+  n <<= Y; n += ((ns[2] + 0x80) >> (8 - Y)); /*y*/
+  n <<= Z; n += ((ns[1] + 0x80) >> (8 - Z)); /*z*/
 
   return n;
 }
@@ -2616,35 +2614,45 @@ static doinline ULONG QuntXYZD(longlong (&ns)[DIM], longlong (&nr)[DIM]) ccr_res
   ULONG n = 0;
 
   /* XYZD -> DXYZ */
-  n <<= D; n |= ((ns[0] + 0x0000) >> (16 - D)); /*d*/
-  n <<= X; n |= ((ns[3] + 0x8000) >> (16 - X)); /*x*/
-  n <<= Y; n |= ((ns[2] + 0x8000) >> (16 - Y)); /*y*/
-  n <<= Z; n |= ((ns[1] + 0x8000) >> (16 - Z)); /*z*/
+  n <<= D; n += (ULONG)((ns[0] + 0x0000) >> (16 - D)); /*d*/
+  n <<= X; n += (ULONG)((ns[3] + 0x8000) >> (16 - X)); /*x*/
+  n <<= Y; n += (ULONG)((ns[2] + 0x8000) >> (16 - Y)); /*y*/
+  n <<= Z; n += (ULONG)((ns[1] + 0x8000) >> (16 - Z)); /*z*/
 
   return n;
 }
 
 template<const int mode, int D, const int X, const int Y, const int Z>
 static doinline ULONG QuntXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricted {
+  const float hZ = (1 << Z) - 0.5f * (1 << Z);
+  const float hY = (1 << Y) - 0.5f * (1 << Y);
+  const float hX = (1 << X) - 0.5f * (1 << X);
+  const float nZ = (1 << Z) - hZ;
+  const float nY = (1 << Y) - hY;
+  const float nX = (1 << X) - hX;
+  const long  mD = (1 << D) - 1;
+  const long  mZ = (1 << Z) - 1;
+  const long  mY = (1 << Y) - 1;
+  const long  mX = (1 << X) - 1;
+  const float rD = (float)mD / 0xFF;
+  const float rZ = (float)mZ / 0xFF;
+//const float rY = (float)mY / 0xFF;
+  const float rX = (float)mX / 0xFF;
+#pragma warning (disable : 4244)
+
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
   ULONG n = 0;
   a16 float vec[4];
 
   /* ################################################################# */
   /**/ if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZ) ||
-           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt)) {
+           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt) ||
+           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
+           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYt)) {
     *((__m128  *)vec) =
       _mm_add_ps(
-      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(0.5f, 0.5f, 0.5f, 1.0f)),
-				   _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f));
-  }
-  /* ################################################################# */
-  else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
-	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYt)) {
-    *((__m128  *)vec) =
-      _mm_add_ps(
-      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(0.5f, 0.5f, 1.0f, 1.0f)),
-				   _mm_set_ps(0.5f, 0.5f, 0.0f, 0.0f));
+      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(nZ, nY, nX,  rD )),
+				   _mm_set_ps(hZ, hY, hX, 0.0f));
   }
   /* ################################################################# */
   else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYt) ||
@@ -2652,15 +2660,15 @@ static doinline ULONG QuntXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
            ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYDZt)) {
     *((__m128  *)vec) =
       _mm_add_ps(
-      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(0.5f, 0.5f, 0.5f, 1.0f)),
-				   _mm_set_ps(0.5f, 0.5f, 0.5f, 0.0f));
+      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(nZ, nY, nX,  rD )),
+				   _mm_set_ps(hZ, hY, hX, 0.0f));
   }
   /* ################################################################# */
   else if ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_AZt) {
     *((__m128  *)vec) =
       _mm_add_ps(
-      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps(1.0f, 0.5f, 1.0f, 1.0f)),
-				   _mm_set_ps(0.0f, 0.5f, 0.0f, 0.0f));
+      _mm_mul_ps(*((__m128  *)nn), _mm_set_ps( rZ , nY,  rX ,  rD )),
+				   _mm_set_ps(0.0f, hY, 0.0f, 0.0f));
   }
 #else
   ULONG n = 0;
@@ -2673,30 +2681,28 @@ static doinline ULONG QuntXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
 
   /* ################################################################# */
   /**/ if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZ) ||
-           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt)) {
-    vec[1] *= 0.5f; vec[1] += 0.5f;
-    vec[2] *= 0.5f; vec[2] += 0.5f;
-    vec[3] *= 0.5f; vec[3] += 0.5f;
-  }
-  /* ################################################################# */
-  else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
+           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYZt) ||
+           ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XY) ||
            ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_XYt)) {
-    vec[1] *= 1.0f; vec[1] += 0.0f;
-    vec[2] *= 0.5f; vec[2] += 0.5f;
-    vec[3] *= 0.5f; vec[3] += 0.5f;
+    vec[0] *= rD; vec[0] += 0x00;
+    vec[1] *= nX; vec[1] += hX;
+    vec[2] *= nY; vec[2] += hY;
+    vec[3] *= nZ; vec[3] += hZ;
   }
   /* ################################################################# */
   else if (((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYt) ||
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYdZt) ||
 	   ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_DXDYDZt)) {
-    vec[1] *= 0.5f; vec[1] += 0.5f;
-    vec[2] *= 0.5f; vec[2] += 0.5f;
-    vec[3] *= 0.5f; vec[3] += 0.5f;
+    vec[0] *= rD; vec[0] += 0x00;
+    vec[1] *= nX; vec[1] += hX;
+    vec[2] *= nY; vec[2] += hY;
+    vec[3] *= nZ; vec[3] += hZ;
   }
   /* ################################################################# */
   else if ((mode & TRGTMODE_CODING) == TRGTMODE_CODING_AZt) {
-    vec[1] *= 1.0f; vec[1] += 0.0f;
-    vec[2] *= 0.5f; vec[2] += 0.5f;
+    vec[0] *= rD; vec[0] += 0x00;
+    vec[1] *= rX; vec[1] += 0x00;
+    vec[2] *= nY; vec[2] += hY;
   }
 #endif
 
@@ -2708,38 +2714,28 @@ static doinline ULONG QuntXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
       ((mode & TRGTMODE_CODING) != TRGTMODE_CODING_DXDYDZt)) {
 #if	defined(SQUASH_USE_SSE) && (SQUASH_USE_SSE >= 2)
     __m128 *v = (__m128 *)vec;
-    __m128 rm = _mm_set_ps(
-      (float)((1 << D) - 1) / 0xFF,
-      (float)((1 << Z) - 1),
-      (float)((1 << Y) - 1),
-      (float)((1 << X) - 1));
-    __m128i rg = _mm_set_epi32(
-             ((1 << D) - 1),
-             ((1 << Z) - 1),
-             ((1 << Y) - 1),
-             ((1 << X) - 1));
+    __m128i rg = _mm_set_epi32(mD, mZ, mY, mX);
 
     __m128 m;
     __m128i i;
 
     /* lattice quantizer */
-    m = _mm_mul_ps   (*v, rm);
-    m = _mm_add_ps   (m, _mm_set_ps1(0.5f));
+    m = _mm_add_ps   (*v, _mm_set_ps1(0.5f));
     i = _mm_cvttps_epi32(m);
     i = _mm_max_epi16(i, _mm_set1_epi32(0));
     i = _mm_min_epi16(i, rg);
 
     /* XYZD -> DXYZ */
-    n <<= D; n |= i.m128i_i32[0]; /*d[ 0,1]*/
-    n <<= X; n |= i.m128i_i32[3]; /*x[-1,1]*/
-    n <<= Y; n |= i.m128i_i32[2]; /*y[-1,1]*/
-    n <<= Z; n |= i.m128i_i32[1]; /*z[-1,1]*/
+    n <<= D; n += i.m128i_i32[0]; /*d[ 0,1]*/
+    n <<= X; n += i.m128i_i32[3]; /*x[-1,1]*/
+    n <<= Y; n += i.m128i_i32[2]; /*y[-1,1]*/
+    n <<= Z; n += i.m128i_i32[1]; /*z[-1,1]*/
 #else
     /* XYZD -> DXYZ */
-    n <<= D; n |= (rint<(1 << D) - 1>(vec[0] * ((1 << D) - 1) / 0xFF)); /*d[ 0,1]*/
-    n <<= X; n |= (sint<(1 << X) - 1>(vec[3] * ((1 << X) - 1)       )); /*x[-1,1]*/
-    n <<= Y; n |= (sint<(1 << Y) - 1>(vec[2] * ((1 << Y) - 1)       )); /*y[-1,1]*/
-    n <<= Z; n |= (sint<(1 << Z) - 1>(vec[1] * ((1 << Z) - 1)       )); /*z[-1,1]*/
+    n <<= D; n += (rint<(1 << D) - 1>(vec[0]); /*d[ 0,1]*/
+    n <<= X; n += (sint<(1 << X) - 1>(vec[3]); /*x[-1,1]*/
+    n <<= Y; n += (sint<(1 << Y) - 1>(vec[2]); /*y[-1,1]*/
+    n <<= Z; n += (sint<(1 << Z) - 1>(vec[1]); /*z[-1,1]*/
 #endif
   }
   else {
@@ -2752,21 +2748,21 @@ static doinline ULONG QuntXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
     long  len;
 
     /* the original vector in up-scaled quantized space (half-normal, length 0.5) */
-    normal[3] = (vec[3] - 0.5f) * ((1 << X) - 1);
-    normal[2] = (vec[2] - 0.5f) * ((1 << Y) - 1);
-    normal[1] = (vec[1] - 0.5f) * ((1 << Z) - 1);
+    normal[3] = (vec[3] - hZ);
+    normal[2] = (vec[2] - hY);
+    normal[1] = (vec[1] - hX);
 
     /* make an iteration for each available lattice-point, divided by 2 (don't
      * check positions twice because of overlapping bboxes, rough approximation)
      */
     int   lattice =
-      max((1 << Z) - 1,
-      max((1 << Y) - 1,
-          (1 << X) - 1));
-    float expansn =        qmax(
-      qabs(vec[3] - 0.5f), qmax(
-      qabs(vec[2] - 0.5f),
-      qabs(vec[1] - 0.5f)));
+      max(mZ,
+      max(mY,
+          mX));
+    float expansn =       qmax(
+      qabs(nn[3] * 0.5f), qmax(
+      qabs(nn[2] * 0.5f),
+      qabs(nn[1] * 0.5f)));
 //  expansn = 0.5f /     expansn ;
     expansn = 0.5f * rcp(expansn);
 
@@ -2774,18 +2770,18 @@ static doinline ULONG QuntXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
         expansions = (long)(iterations * (expansn - 1.0f));
 
     for (int i = (iterations + expansions); i >= (iterations - expansions); i--) {
+      /* shorten the vector per iteration */
 //    float rit = (float)i / iterations;
       float rit = rcp(iterations) * i;
 
       /* the quantized opposing corner vectors in up-scaled quantized space */
-      sides[3][0] = qfloor(normal[3] * rit);
-      sides[2][0] = qfloor(normal[2] * rit);
-      sides[1][0] = qfloor(normal[1] * rit);
-
-      /* shorten the vector per iteration */
-      sides[3][1] = min(sides[3][0] + 1, ((1L << X) >> 1) - 1);
-      sides[2][1] = min(sides[2][0] + 1, ((1L << X) >> 1) - 1);
-      sides[1][1] = min(sides[1][0] + 1, ((1L << X) >> 1) - 1);
+      sides[3][0] = qfloor(normal[3] * rit - 0.5f) * 2 + 1;
+      sides[2][0] = qfloor(normal[2] * rit - 0.5f) * 2 + 1;
+      sides[1][0] = qfloor(normal[1] * rit - 0.5f) * 2 + 1;
+      /* walk only on the odd lattice */
+      sides[3][1] = min(sides[3][0] + 2, mZ);
+      sides[2][1] = min(sides[2][0] + 2, mY);
+      sides[1][1] = min(sides[1][0] + 2, mX);
 
 #define	qcpy(a, b)    a[3] = b[3] , a[2] = b[2] , a[1] = b[1]
 #define	qlen(z,y,x)   z[3] * z[3] + y[2] * y[2] + x[1] * x[1]
@@ -2827,17 +2823,18 @@ static doinline ULONG QuntXYZD(float (&nn)[DIM], float (&nr)[DIM]) ccr_restricte
 #undef	qdot
 
     /* put the 0.5 back (8 bit -> 0x80 etc.) */
-    bestp[1] += (1L << X) >> 1;
-    bestp[2] += (1L << Y) >> 1;
-    bestp[3] += (1L << Z) >> 1;
+    bestp[1] = ((bestp[1] - 1) >> 1) + (mX - (mX >> 1));
+    bestp[2] = ((bestp[2] - 1) >> 1) + (mY - (mY >> 1));
+    bestp[3] = ((bestp[3] - 1) >> 1) + (mZ - (mZ >> 1));
 
     /* XYZD -> DXYZ */
-    n <<= D; n |= (rint<(1 << D) - 1>(vec[0] * ((1 << D) - 1L) / 0xFF)); /*d[ 0,1]*/
-    n <<= X; n |= qmax(qmin(bestp[3], (1L << X) - 1L), 0L); /*x[-1,1]*/
-    n <<= Y; n |= qmax(qmin(bestp[2], (1L << Y) - 1L), 0L); /*y[-1,1]*/
-    n <<= Z; n |= qmax(qmin(bestp[1], (1L << Z) - 1L), 0L); /*z[-1,1]*/
+    n <<= D; n += (rint<(1 << D) - 1>(vec[0])); /*d[ 0,1]*/
+    n <<= X; n += qmax(bestp[3], 0L); /*x[-1,1]*/
+    n <<= Y; n += qmax(bestp[2], 0L); /*y[-1,1]*/
+    n <<= Z; n += qmax(bestp[1], 0L); /*z[-1,1]*/
   }
-
+  
+#pragma warning (default : 4244)
   return n;
 }
 

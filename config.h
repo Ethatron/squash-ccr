@@ -32,7 +32,8 @@
 #ifndef SQUASH_CONFIG_H
 #define SQUASH_CONFIG_H
 
-#define	SQUASH_USE_API	110
+#define	SQUASH_USE_API	90
+//#define	SQUASH_USE_API	110
 
 /* spill level X's intermediate sums for level X+1 to use for calculation (and up)
  *
@@ -64,7 +65,7 @@
 
 // Set to 1 or 2 or 3 or 4 when building squish to use SSE or SSE2, SSE3 or SSE4 instructions.
 #ifndef SQUASH_USE_SSE
-#define SQUASH_USE_SSE 3
+#define SQUASH_USE_SSE 2
 #endif
 
 // Set to 3 or 4 when building squish to use SSSE3 or SSE4A instructions.

@@ -70,9 +70,9 @@ public:
 
   friend longlong operator / (const longlong &l, const int &d) ccr_restricted {
     unsigned long q1 = l.hi / d;
-    unsigned long r1 = ((l.hi - (q1 * d)) << 16) | (l.lo >> 16);
+    unsigned long r1 = ((l.hi - (q1 * d)) << 16) + (l.lo >> 16);
     unsigned long q2 = r1 / d;
-    unsigned long r2 = (( r1  - (q2 * d)) << 16) | (l.lo & 0xFFFF);
+    unsigned long r2 = (( r1  - (q2 * d)) << 16) + (l.lo & 0xFFFF);
     unsigned long q3 = r2 / d;
 
     longlong res = 0;

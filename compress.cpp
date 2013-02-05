@@ -38,6 +38,25 @@
 
 /* ------------------------------------------------------------------------------------
  */
+#if	defined(SQUASH_USE_AMP)
+#define	SQUISH_USE_AMP
+#endif
+#if	defined(SQUASH_USE_AMP_DEBUG)
+#define	SQUASH_USE_AMP_DEBUG
+#endif
+#if	defined(SQUASH_USE_PRE)
+#define	SQUISH_USE_PRE
+#endif
+#if	defined(SQUASH_USE_CCR)
+#define	SQUISH_USE_CCR
+#endif
+#if	defined(SQUASH_USE_SSE)
+#define	SQUISH_USE_SSE	SQUASH_USE_SSE
+#endif
+#if	defined(SQUASH_USE_XSSE)
+#define	SQUISH_USE_XSSE	SQUASH_USE_XSSE
+#endif
+
 /* only way to do this, <format> from template argument to preprocessor check */
 #if	defined(SQUASH_USE_AMP) && defined(SQUASH_USE_PRE)
 
@@ -63,7 +82,7 @@ namespace squash {
 } // namespace squash
 
 #else
-#include "squish.inl"
+#include "..\squish\squish.inl"
 #endif
 
 /* ------------------------------------------------------------------------------------
@@ -289,8 +308,7 @@ void TextureCompressDXT(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
 		  break;
 	  /* --YX -> XY-- */
 	  /* AL-- -> LA-- */
-	  case 2: /**/ if (format == TCOMPRESS_XYz) iTex[0][ly][lx][0] = iTex[0][ly][lx][2],  // Y
-						    iTex[1][ly][lx][0] = iTex[0][ly][lx][3];  // X
+	  case 2: /**/ if (format == TCOMPRESS_XYz) iTex[0][ly][lx][0] = 0xFF;
 		  else if (format == TCOMPRESS_xy ) iTex[0][ly][lx][0] = iTex[0][ly][lx][2],  // Y
 						    iTex[1][ly][lx][0] = iTex[0][ly][lx][3];  // X
 		  else if (format == TCOMPRESS_XY ) iTex[0][ly][lx][0] = iTex[0][ly][lx][2],  // Y
@@ -352,6 +370,14 @@ void TextureCompressDXT(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
 	    break;
 	  case 2:
 	    /* 2x LONG for ATI2 */
+	    if (format == TCOMPRESS_XYz)
+	    { posx <<= 1;
+	      if (elm.local == index<2>(0, 0)) { squish::CompressNormalBtc5(iTex[0],   0xFFFF, b0, b1, b2, b3); dArr(posy, posx + 0) = b0;
+													        dArr(posy, posx + 1) = b1; }
+	      if (elm.local == index<2>(0, 1)) { squish::CompressNormalBtc5(iTex[0],   0xFFFF, b0, b1, b2, b3); dArr(posy, posx + 2) = b2;
+													        dArr(posy, posx + 3) = b3; }
+	    }
+	    else
 	    { posx <<= 1;
 	      if (elm.local == index<2>(0, 0)) { squish::CompressAlphaBtc3(iTex[0],    0xFFFF, b0, b1       ); dArr(posy, posx + 0) = b0;
 													       dArr(posy, posx + 1) = b1; }
@@ -395,8 +421,8 @@ void TextureCompressDXT(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
      */
     if (l >= SQUASH_INTERMEDIATES) {
       if (!smem[l].splc) {
-        smem[l].splh =		           texd.Height                                       ;
-        smem[l].splw =			                 texd.Width                          ;
+        smem[l].splh =		                texd.Height                                       ;
+        smem[l].splw =			                      texd.Width                          ;
         smem[l].splc = (ULONG *)_aligned_malloc(texd.Height * texd.Width * DIM * sizeof(type), 16);
       }
     }
@@ -420,7 +446,7 @@ void TextureCompressDXT(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
     for (int y = 0; y < (int)texd.Height; y += TY) {
 #endif
       if (!(y & 0x3F)) {
-	logrf("level %2d/%2d: line %4d/%4d processed        \r", l + 1, levels, y, texd.Height);
+//	logrf("level %2d/%2d: line %4d/%4d processed        \r", l + 1, levels, y, texd.Height);
 
 	/* problematic, the throw() inside may not block all threads ... */
 //	PollProgress();
@@ -591,8 +617,8 @@ void TextureCompressDXT(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
 
 	/* swizzle ABGR -> AGBR */
         if (TCOMPRESS_SWIZZL(format))
-//	  t = (t & 0xFFFF0000) | ((t >> 8) & 0x00FF) | ((t & 0x00FF) << 8);
-	  t = (t & 0xFF0000FF) | ((t >> 8) & 0xFF00) | ((t & 0xFF00) << 8);
+//	  t = (t & 0xFFFF0000) + ((t >> 8) & 0x00FF) + ((t & 0x00FF) << 8);
+	  t = (t & 0xFF0000FF) + ((t >> 8) & 0xFF00) + ((t & 0xFF00) << 8);
 
 	/* write the result ABGR, BGR */
         switch (TCOMPRESS_CHANNELS(format) + (TCOMPRESS_GREYS(format) ? 2 : 0)) {
@@ -600,12 +626,12 @@ void TextureCompressDXT(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
           case 4:                                   bTex[0][ly][lx] = (t) | 0x00000000; break;
           /* -BGR -> RGB- */
 	  case 3:                                   bTex[0][ly][lx] = (t) | 0xFF000000; break;
-	  /* --YX -> XY-- */
-	  /* AL-- -> LA-- */
-          case 2: /**/ if (format == TCOMPRESS_XYz) bTex[0][ly][lx] = ((t << 16) & 0xFF000000) | ((t <<  8) & 0x0000FF00);
-		  else if (format == TCOMPRESS_xy ) bTex[0][ly][lx] = ((t << 16) & 0xFF000000) | ((t <<  8) & 0x0000FF00);
-		  else if (format == TCOMPRESS_XY ) bTex[0][ly][lx] = ((t << 16) & 0xFF000000) | ((t <<  8) & 0x0000FF00);
-		  else                              bTex[0][ly][lx] = ((t <<  0) & 0xFF000000) | ((t >>  8) & 0x0000FF00);
+	  /* --YX -> XYXY */
+	  /* AL-- -> LALA */
+          case 2: /**/ if (format == TCOMPRESS_XYz) bTex[0][ly][lx] = ((t & 0xFFFF0000) + _byteswap_ushort((unsigned short)t)) | 0xFF000000;
+		  else if (format == TCOMPRESS_xy ) bTex[0][ly][lx] = _byteswap_ushort((unsigned short)t) + (_byteswap_ushort((unsigned short)t) << 16);
+		  else if (format == TCOMPRESS_XY ) bTex[0][ly][lx] = _byteswap_ushort((unsigned short)t) + (_byteswap_ushort((unsigned short)t) << 16);
+		  else                              bTex[0][ly][lx] = ((t & 0xFFFF0000) + (t >> 16));
 		  break;
           /* -Z-- -> Z--- */
 	  /* A--- -> A--- */
@@ -637,8 +663,8 @@ void TextureCompressDXT(struct spill *smem, RESOURCEINFO &texo, RESOURCEINFO &te
 }
 
 template<typename UTYPE, typename type, const int format>
-bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
-  LPDIRECT3DTEXTURE text = NULL;
+bool TextureCompressDXT(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) {
+  LPDIRECT3DBASETEXTURE text = NULL;
   RESOURCEINFO texo;
 
   TextureInfoLevel(*tex, texo, 0);
@@ -649,8 +675,8 @@ bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
    * channels of the output texture.
    */
   HRESULT D3DXComputeNormalMap(
-    __out  LPDIRECT3DTEXTURE pTexture,
-    __in   LPDIRECT3DTEXTURE pSrcTexture,
+    __out  LPDIRECT3DBASETEXTURE pTexture,
+    __in   LPDIRECT3DBASETEXTURE pSrcTexture,
     __in   const PALETTEENTRY *pSrcPalette,
     __in   DWORD Flags,
     __in   DWORD Channel,
@@ -659,23 +685,22 @@ bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
 #endif
 
   /* convert to ARGB8 (TODO: support at least the 16bit formats as well) */
-  TEXFORMAT origFormat = texo.Format;
+  TEXFORMAT origFormat = texo.Format; texo.Format = (TEXFORMAT)TEXFMT_A8R8G8B8;
   if ((origFormat != TEXFMT_A8R8G8B8) && !TextureConvert(texo, tex, TCOMPRESS_NORMAL(format)))
     return false;
 
   /* make a histogram of the alpha-channel */
-  int squish__kBtcD = squish::kBtc3;
   if (optimize) {
     struct histogram h;
     memset((void *)&h, 0, sizeof(h));
     h.grey = h.blank = h.black = true;
 
-    ULONG sPch, *sTex = 
-    TextureLock((*tex), 0, &sPch); sPch >>= 2;
+    ULONG sPch, *sTex =
+    TextureLock((*tex), 0, -1, &sPch); sPch >>= 2;
     TextureMatte<format>(texo, sPch, sTex);
     HistogramCompressDXT(&h, texo, sPch, sTex);
-    TextureUnlock((*tex), 0);
-    
+    TextureUnlock((*tex), 0, -1);
+
     for (unsigned int c = 0; c < 256; c += 1) {
       if (h.histo[0][c]) h.histn[0]++;
       if (h.histo[1][c]) h.histn[1]++;
@@ -837,20 +862,37 @@ bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
   /* create the textures */
   const int levels = TextureCalcMip(texo.Width, texo.Height, minlevel);
   
-  int flags = 0;
-  if (optimizequick)
-    flags = squish::kColourRangeFit;
-  else
-    flags = squish::kColourIterativeClusterFit | squish::kAlphaIterativeFit;
+  int squish__kBtcD = squish::kBtc3;
+  int flags;
+
+  /* smart max. quality settings */
+  if (manualflags == -1) {
+    flags = 0;
+
+    if (optimizequick)
+      flags = squish::kColourRangeFit;
+    else
+      flags = squish::kColourIterativeClusterFit | squish::kAlphaIterativeFit;
+  }
+  /* enforce desired format */
+  else {
+    flags = manualflags;
+
+    if (flags & squish::kBtc5) origFormat = TEXFMT_ATI2;
+    if (flags & squish::kBtc4) origFormat = TEXFMT_ATI1;
+    if (flags & squish::kBtc3) origFormat = TEXFMT_DXT5;
+    if (flags & squish::kBtc2) origFormat = TEXFMT_DXT3;
+    if (flags & squish::kBtc1) origFormat = TEXFMT_DXT1;
+  }
 
 #ifdef DX11
-  ID3D11Texture2D *rtex; RESOURCEINFO cr;
+  ID3D11Texture2D *rtex; D3D11_TEXTURE2D_DESC cr;
   memset(&cr, 0, sizeof(cr));
 
   cr.Width  = (texo.Width  + (TX - 1)) & (~(TX - 1));
   cr.Height = (texo.Height + (TY - 1)) & (~(TY - 1));
   cr.MipLevels = levels;
-  cr.ArraySize = texo.ArraySize;
+  cr.ArraySize = texo.Slices;
 
   TEXFORMAT tf = TEXFMT_UNKNOWN;
   switch (TCOMPRESS_CHANNELS(format) + (TCOMPRESS_GREYS(format) ? 2 : 0)) {
@@ -903,29 +945,41 @@ bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
 
 	    flags |= squish__kBtcD, dxtFormat = D3DFMT_DXT5; break;
     case 3: flags |= squish::kBtc1; dxtFormat = D3DFMT_DXT1; break;
-
-    /* ATI1/2 without hardware, mem-layout (alignment etc.) is the same as DXT1/3 */
-//  case 2: flags |= squish::kBtc3; dxtFormat = D3DFMT_ATI2; break;
-//  case 1: flags |= squish::kBtc3; dxtFormat = D3DFMT_ATI1; break;
-    case 2: flags |= squish::kBtc3; dxtFormat = D3DFMT_DXT3; break;
-    case 1: flags |= squish::kBtc3; dxtFormat = D3DFMT_DXT1; break;
+//  case 2: flags |= squish::kBtc5; dxtFormat = D3DFMT_ATI2; break;
+//  case 1: flags |= squish::kBtc4; dxtFormat = D3DFMT_ATI1; break;
+    case 2: flags |= squish::kBtc5; dxtFormat = D3DFMT_DXT3; break;
+    case 1: flags |= squish::kBtc4; dxtFormat = D3DFMT_DXT1; break;
   }
 
-  res = pD3DDevice->CreateTexture(dxtWidth, dxtHeight, levels, 0, dxtFormat, D3DPOOL_SYSTEMMEM, &text, NULL);
+  res = pD3DDevice->CreateTexture(dxtWidth, dxtHeight, levels, 0, dxtFormat, D3DPOOL_SYSTEMMEM, (IDirect3DTexture9 **)&text, NULL);
+
+  /* retry */
+  if (!text) {
+    switch (TCOMPRESS_CHANNELS(format) + (TCOMPRESS_GREYS(format) ? 2 : 0)) {
+      /* ATI1/2 without hardware, mem-layout (alignment etc.) is the same as DXT1/3 */
+      case 2: flags |= squish::kBtc5; dxtFormat = D3DFMT_DXT3; break;
+      case 1: flags |= squish::kBtc4; dxtFormat = D3DFMT_DXT1; break;
+    }
+
+    res = pD3DDevice->CreateTexture(dxtWidth, dxtHeight, levels, 0, dxtFormat, D3DPOOL_SYSTEMMEM, (IDirect3DTexture9 **)&text, NULL);
+  }
 #endif
-  
+
   /* damit */
   if (!text)
     return false;
-  
-  /**/ if (TCOMPRESS_TRANS(format))
-    flags |= squish::kWeightColourByAlpha;
-  /**/ if (TCOMPRESS_GREYS(format))
-    flags |= squish::kColourMetricUniform;
-  else if (TCOMPRESS_COLOR(format))
-    flags |= squish::kColourMetricPerceptual;
-  else if (TCOMPRESS_NORMAL(format))
-    flags |= squish::kColourMetricUniform;
+
+  /* smart max. quality settings */
+  if (manualflags == -1) {
+    /**/ if (TCOMPRESS_TRANS(format))
+      flags |= squish::kWeightColourByAlpha;
+    /**/ if (TCOMPRESS_GREYS(format))
+      flags |= squish::kColourMetricUniform;
+    else if (TCOMPRESS_COLOR(format))
+      flags |= squish::kColourMetricPerceptual;
+    else if (TCOMPRESS_NORMAL(format))
+      flags |= squish::kColourMetricUniform;
+  }
 
   /* calculate pointer of compressed blocks */
   int blocksize = 0;
@@ -937,7 +991,7 @@ bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
     case 1: blocksize = (( 4 ) / 2); break;  /* 4x4x1 ->  8bytes */
   }
 
-  ULONG sPch, *texs = TextureLock((*tex), 0, &sPch); sPch >>= 2;
+  ULONG sPch, *texs = TextureLock((*tex), 0, -1, &sPch); sPch >>= 2;
 
 #if	defined(SQUASH_INTERMEDIATES)
   struct spill smem[32] = {{0}};
@@ -951,22 +1005,22 @@ bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
   for (int l = 0; l < levels; l++) {
     RESOURCEINFO texd;
 
-    TextureInfoLevel(text, texd, l); ULONG dPch, *texr = 
-    TextureLock(text, l, &dPch, true); dPch >>= 2;
+    TextureInfoLevel(text, texd, l); ULONG dPch, *texr =
+    TextureLock(text, l, -1, &dPch, true); dPch >>= 2;
 
     TextureCompressDXT<UTYPE, type, format>(smem, texo, texd, sPch, dPch, texs, texr, levels, l, blocksize, flags);
 
-    TextureUnlock(text, l);
+    TextureUnlock(text, l, -1);
   }
 
-  logrf("                                                      \r");
+//logrf("                                                      \r");
 
 #if	defined(SQUASH_INTERMEDIATES)
   for (int l = 0; l < levels; l++)
     if (smem[l].splc) _aligned_free(smem[l].splc);
 #endif
 
-  TextureUnlock((*tex), 0);
+  TextureUnlock((*tex), 0, -1);
   (*tex)->Release();
   (*tex) = text;
 
@@ -984,17 +1038,17 @@ bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) {
 namespace squash {
 
 /* we don't process normal-maps as integers */
-template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_xyz >(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XYZ >(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XZY >(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_xyz >(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XYZ >(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XZY >(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
-template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_xyzD>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XYZD>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XZYD>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_xyzD>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XYZD>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XZYD>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
-template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_xyzV>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XYZV>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
-template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XZYV>(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_xyzV>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XYZV>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
+template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XZYV>(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize) { return false; }
 
 } // namespace squash
 
@@ -1003,181 +1057,202 @@ template<> bool TextureCompressDXT<ULONG, long, TCOMPRESS_XZYV>(int minlevel, LP
 
 namespace squash {
 
-bool TextureCompressRGBA(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureCompressRGBA(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
-  if   (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBA>(minlevel, base);
-  else if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBA>(minlevel, base);
-  else            res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGBA>(minlevel, base);
+  if   (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBA>(minlevel, base, manualflags == -1);
+  else if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBA>(minlevel, base, manualflags == -1);
+  else            res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGBA>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressRGB_A(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureCompressRGB_A(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
-  if   (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBa>(minlevel, base);
-  else if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBa>(minlevel, base);
-  else            res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGBa>(minlevel, base);
+  if   (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBa>(minlevel, base, manualflags == -1);
+  else if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBa>(minlevel, base, manualflags == -1);
+  else            res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGBa>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressRGBH(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureCompressRGBH(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
-  if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBH>(minlevel, base);
-  else       res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGBH>(minlevel, base);
+  if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGBH>(minlevel, base, manualflags == -1);
+  else       res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGBH>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressRGB(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureCompressRGB(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
-  if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGB>(minlevel, base);
-  else       res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGB>(minlevel, base);
+  if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_RGB>(minlevel, base, manualflags == -1);
+  else       res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGB>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressLA(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureCompressLA(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
-  if   (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_LA>(minlevel, base);
-  else if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_LA>(minlevel, base);
-  else            res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_LA>(minlevel, base);
+  if   (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_LA>(minlevel, base, manualflags == -1);
+  else if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_LA>(minlevel, base, manualflags == -1);
+  else            res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_LA>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressL_A(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma, bool contrast) {
+bool TextureCompressL_A(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma, bool contrast) {
   bool res = true;
 
-  if   (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_La>(minlevel, base);
-  else if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_La>(minlevel, base);
-  else            res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_La>(minlevel, base);
+  if   (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_La>(minlevel, base, manualflags == -1);
+  else if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_La>(minlevel, base, manualflags == -1);
+  else            res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_La>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressLH(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureCompressLH(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
-  if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_LH>(minlevel, base);
-  else       res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_LH>(minlevel, base);
+  if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_LH>(minlevel, base, manualflags == -1);
+  else       res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_LH>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressL(LPDIRECT3DTEXTURE *base, int minlevel, bool gamma) {
+bool TextureCompressL(LPDIRECT3DBASETEXTURE *base, int minlevel, bool gamma) {
   bool res = true;
 
-  if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_L>(minlevel, base);
-  else       res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_L>(minlevel, base);
+  if (gamma) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_L>(minlevel, base, manualflags == -1);
+  else       res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_L>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressA(LPDIRECT3DTEXTURE *base, int minlevel, bool contrast) {
+bool TextureCompressA(LPDIRECT3DBASETEXTURE *base, int minlevel, bool contrast) {
   bool res = true;
 
-  if (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_A>(minlevel, base);
-  else          res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_A>(minlevel, base);
+  if (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_A>(minlevel, base, manualflags == -1);
+  else          res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_A>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompress_A(LPDIRECT3DTEXTURE *base, int minlevel, bool contrast) {
+bool TextureCompress_A(LPDIRECT3DBASETEXTURE *base, int minlevel, bool contrast) {
   bool res = true;
 
-  if (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_a>(minlevel, base);
-  else          res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_a>(minlevel, base);
+  if (contrast) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_a>(minlevel, base, manualflags == -1);
+  else          res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_a>(minlevel, base, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressXYZD(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureCompressXYZD(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
-  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYZD>(minlevel, norm);
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYZD>(minlevel, norm, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompress_XYZD(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureCompress_XYZD(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
-  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xyzD>(minlevel, norm);
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xyzD>(minlevel, norm, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressXY_Z(LPDIRECT3DTEXTURE *norm, LPDIRECT3DTEXTURE *z, int minlevel) {
+bool TextureCompress_XY_Z(LPDIRECT3DBASETEXTURE *norm, LPDIRECT3DBASETEXTURE *z, int minlevel) {
   bool res = true;
 
-  /* TODO: not really fast
-  (*z = *norm)->AddRef(); */
+  /* TODO: not really fast */
+  if (z && norm && (*z == *norm)) (*z)->AddRef();
 
-  if (norm) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYz>(minlevel, norm);
-  if (z   ) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xyZ>(minlevel, z);
+  if (norm) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYz>(minlevel, norm, manualflags == -1);
+  if (z   ) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xyZ>(minlevel, z   , manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressXYZ(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureCompressXY_Z(LPDIRECT3DBASETEXTURE *norm, LPDIRECT3DBASETEXTURE *z, int minlevel) {
   bool res = true;
 
-  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYZ>(minlevel, norm);
+  /* TODO: not really fast */
+  if (z && norm && (*z == *norm)) (*z)->AddRef();
+
+  if (norm) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYZ>(minlevel, norm, manualflags == -1);
+  if (z   ) res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYZ>(minlevel, z   , manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressXZY(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureCompressXYZ(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
-  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XZY>(minlevel, norm);
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYZ>(minlevel, norm, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompress_XYZ(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureCompressXZY(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
-  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xyz>(minlevel, norm);
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XZY>(minlevel, norm, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressXY(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureCompress_XYZ(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
-  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XY>(minlevel, norm);
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xyz>(minlevel, norm, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompress_XY(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureCompressXY(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
-  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xy>(minlevel, norm);
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XY>(minlevel, norm, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompress_Z(LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureCompress_XY(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
-  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xyZ>(minlevel, norm);
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xy>(minlevel, norm, manualflags == -1);
 
   return res;
 }
 
-bool TextureCompressPM(LPDIRECT3DTEXTURE *base, LPDIRECT3DTEXTURE *norm, int minlevel) {
+bool TextureCompressZ(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
   bool res = true;
 
-  res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGBH>(minlevel, base);
-  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYZD>(minlevel, norm);
+//res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_Z  >(minlevel, norm, manualflags == -1);
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYZ>(minlevel, norm, manualflags == -1);
+
+  return res;
+}
+
+bool TextureCompress_Z(LPDIRECT3DBASETEXTURE *norm, int minlevel) {
+  bool res = true;
+
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_xyZ>(minlevel, norm, manualflags == -1);
+
+  return res;
+}
+
+bool TextureCompressPM(LPDIRECT3DBASETEXTURE *base, LPDIRECT3DBASETEXTURE *norm, int minlevel) {
+  bool res = true;
+
+  res = res && TextureCompressDXT<ULONG, long , TCOMPRESS_RGBH>(minlevel, base, manualflags == -1);
+  res = res && TextureCompressDXT<ULONG, float, TCOMPRESS_XYZD>(minlevel, norm, manualflags == -1);
 
   return res;
 }

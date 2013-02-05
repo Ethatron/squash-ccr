@@ -62,18 +62,18 @@
 
 namespace squash {
 
-  bool TextureConvert(int minlevel, LPDIRECT3DTEXTURE *tex, bool dither, bool gamma, TEXFORMAT target);
-  bool TextureCollapse(LPDIRECT3DTEXTURE *tex, TEXFORMAT target, bool swizzle);
+  bool TextureConvert(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool dither, bool gamma, TEXFORMAT target);
+  bool TextureCollapse(LPDIRECT3DBASETEXTURE *tex, TEXFORMAT target, bool swizzle);
 
   template<                               const int format>
   void TextureMatte(RESOURCEINFO &texo, ULONG sPch, ULONG *sTex);
 
   template<typename UTYPE, typename type, const int format, const int A>
-  bool TextureQuantizeRAW(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize = true);
+  bool TextureQuantizeRAW(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize = true);
   template<typename UTYPE, typename type, const int format>
-  bool TextureConvertRAW (int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize = true);
+  bool TextureConvertRAW (int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize = true);
   template<typename UTYPE, typename type, const int format>
-  bool TextureCompressDXT(int minlevel, LPDIRECT3DTEXTURE *tex, bool optimize = true);
+  bool TextureCompressDXT(int minlevel, LPDIRECT3DBASETEXTURE *tex, bool optimize = true);
 
 } // namespace squash
 
@@ -96,27 +96,28 @@ namespace squash {
 #define	TCOMPRESS_TRANS(fmt)	(((fmt) == TCOMPRESS_a) || ((fmt) == TCOMPRESS_A ) || ((fmt) == TCOMPRESS_La) || ((fmt) == TCOMPRESS_LA) || ((fmt) == TCOMPRESS_RGBa) || ((fmt) == TCOMPRESS_RGBA))
 #define	TCOMPRESS_TRESH(fmt)	(((fmt) == TCOMPRESS_a) || ((fmt) == TCOMPRESS_La) || ((fmt) == TCOMPRESS_RGBa))
 
-#define TCOMPRESS_xy		11
-#define TCOMPRESS_xyZ		12
-#define TCOMPRESS_XY		13
-#define TCOMPRESS_XYz		14
-#define TCOMPRESS_xyz		15
-#define TCOMPRESS_xyzV		16
-#define TCOMPRESS_xyzD		17
-#define TCOMPRESS_XYZ		18
-#define TCOMPRESS_XZY		19
-#define TCOMPRESS_XYZV		20
-#define TCOMPRESS_XZYV		21
-#define TCOMPRESS_XYZD		22
-#define TCOMPRESS_XZYD		23
-#define TCOMPRESS_XYCD		24
-#define	TCOMPRESS_NINDEP(fmt)	(((fmt) >= TCOMPRESS_xy ) && ((fmt) <= TCOMPRESS_xyzD))
+#define TCOMPRESS_xy		11	// linear, no incoming z
+#define TCOMPRESS_xyZ		12	// linear, incoming z
+#define TCOMPRESS_XY		13	// scale, partial derivative, z == 1.0f
+#define TCOMPRESS_XYz		14	// linear, incoming z
+#define TCOMPRESS_xyz		15	// linear
+#define TCOMPRESS_xyzV		16	// linear
+#define TCOMPRESS_xyzD		17	// linear
+#define TCOMPRESS_xyCD		18	// linear, no incoming z
+#define TCOMPRESS_XYCD		19	// scale, partial derivative, z == 1.0f
+#define TCOMPRESS_XYZ		20	// scale, partial derivative, z == adaptive
+#define TCOMPRESS_XZY		21	// scale, partial derivative, z == adaptive
+#define TCOMPRESS_XYZV		22	// scale, partial derivative, z == adaptive
+#define TCOMPRESS_XZYV		23	// scale, partial derivative, z == adaptive
+#define TCOMPRESS_XYZD		24	// scale, partial derivative, z == adaptive
+#define TCOMPRESS_XZYD		25	// scale, partial derivative, z == adaptive
+#define	TCOMPRESS_NINDEP(fmt)	(((fmt) >= TCOMPRESS_xy ) && ((fmt) <= TCOMPRESS_xyCD))
 #define	TCOMPRESS_SWIZZL(fmt)	(((fmt) == TCOMPRESS_XZY) || ((fmt) == TCOMPRESS_XZYD) || ((fmt) == TCOMPRESS_XZYV))
-#define	TCOMPRESS_NORMAL(fmt)	(((fmt) >= TCOMPRESS_xy ) && ((fmt) <= TCOMPRESS_XYCD))
+#define	TCOMPRESS_NORMAL(fmt)	(((fmt) >= TCOMPRESS_xy ) && ((fmt) <= TCOMPRESS_XZYD))
 
 /* do we have a side-stream? */
 #define	TCOMPRESS_SIDES(fmt)	((((fmt) != TCOMPRESS_L) && ((fmt) != TCOMPRESS_RGB) && ((fmt) != TCOMPRESS_RGBV)) ||	\
-				  ((fmt) == TCOMPRESS_xyzD) || ((fmt) >= TCOMPRESS_XYZD))
+				  ((fmt) == TCOMPRESS_xyzD) || ((fmt) == TCOMPRESS_xyCD) || ((fmt) >= TCOMPRESS_XYZD))
 
 #define	TCOMPRESS_CHANNELS(fmt)			\
   (						\
@@ -139,6 +140,7 @@ namespace squash {
     ((fmt) == TCOMPRESS_xyz	? 3 :		\
     ((fmt) == TCOMPRESS_xyzV	? 4 :		\
     ((fmt) == TCOMPRESS_xyzD	? 4 :		\
+    ((fmt) == TCOMPRESS_xyCD	? 4 :		\
     ((fmt) == TCOMPRESS_XYZ	? 3 :		\
     ((fmt) == TCOMPRESS_XZY	? 3 :		\
     ((fmt) == TCOMPRESS_XYZV	? 4 :		\
@@ -147,7 +149,7 @@ namespace squash {
     ((fmt) == TCOMPRESS_XZYD	? 4 :		\
     ((fmt) == TCOMPRESS_XYCD	? 4 :		\
 				  0		\
-    )))))))))))))))))))))))))			\
+    ))))))))))))))))))))))))))			\
   )
 
 /* in Oblivion the encoding to DXT1 apparently turns

@@ -46,22 +46,28 @@ struct f { const int format() const { return fmt; }};
  */
 
 #if	defined(format)
-#if	(TCOMPRESS_TRESH (format))
+#if	(TCOMPRESS_TRESH  (format))
 #define	Accu(tt, t)	\
   AccuRGBA<ACCUMODE_SCALE >(tt, t, colorgamma, alphacontrast);	// +=
-#elif	(TCOMPRESS_TRANS (format))
+#elif	(TCOMPRESS_TRANS  (format))
 #define	Accu(tt, t)	\
   AccuRGBA<ACCUMODE_LINEAR>(tt, t, colorgamma, alphacontrast);	// +=
-#elif	(TCOMPRESS_COLOR (format))
+#elif	(TCOMPRESS_COLOR  (format))
 #define	Accu(tt, t)	\
   AccuRGBH<ACCUMODE_LINEAR>(tt, t, colorgamma);	// +=
 
-#elif	(TCOMPRESS_xy  == format )
+#elif	(TCOMPRESS_xy   == format )
 #define	Accu(tt, t)	\
   AccuXYZD<ACCUMODE_LINEAR>(tt, t);	// +=
-#elif	(TCOMPRESS_XY  == format )
+#elif	(TCOMPRESS_XY   == format )
 #define	Accu(tt, t)	\
   AccuXYZD<ACCUMODE_SCALE >(tt, t);	// +=
+#elif	(TCOMPRESS_xyCD == format )
+#define	Accu(tt, t)	\
+  AccuXYCD<ACCUMODE_LINEAR>(tt, t);	// +=
+#elif	(TCOMPRESS_XYCD == format )
+#define	Accu(tt, t)	\
+  AccuXYCD<ACCUMODE_SCALE >(tt, t);	// +=
 #elif	(TCOMPRESS_NINDEP(format))
 #define	Accu(tt, t)	\
   AccuXYZD<ACCUMODE_LINEAR>(tt, t);	// +=
@@ -72,22 +78,17 @@ struct f { const int format() const { return fmt; }};
 #error
 #endif
 #else
-#define	Accu(nn, n) {							\
-  /**/ if (TCOMPRESS_TRESH (fmt.format()))				\
-    AccuRGBA<ACCUMODE_SCALE >(nn, n, colorgamma, alphacontrast);	\
-  else if (TCOMPRESS_TRANS (fmt.format()))				\
-    AccuRGBA<ACCUMODE_LINEAR>(nn, n, colorgamma, alphacontrast);	\
-  else if (TCOMPRESS_COLOR (fmt.format()))				\
-    AccuRGBH<ACCUMODE_LINEAR>(nn, n, colorgamma);			\
-									\
-  else if (TCOMPRESS_xy  == fmt.format())				\
-    AccuXYZD<ACCUMODE_LINEAR>(nn, n);					\
-  else if (TCOMPRESS_XY  == fmt.format())				\
-    AccuXYZD<ACCUMODE_SCALE >(nn, n);					\
-  else if (TCOMPRESS_NINDEP(fmt.format()))				\
-    AccuXYZD<ACCUMODE_LINEAR>(nn, n);					\
-  else if (TCOMPRESS_NORMAL(fmt.format()))				\
-    AccuXYZD<ACCUMODE_SCALE >(nn, n);					\
+#define	Accu(nn, n) {												\
+  /**/ if (TCOMPRESS_TRESH  (fmt.format())) AccuRGBA<ACCUMODE_SCALE >(nn, n, colorgamma, alphacontrast);	\
+  else if (TCOMPRESS_TRANS  (fmt.format())) AccuRGBA<ACCUMODE_LINEAR>(nn, n, colorgamma, alphacontrast);	\
+  else if (TCOMPRESS_COLOR  (fmt.format())) AccuRGBH<ACCUMODE_LINEAR>(nn, n, colorgamma);			\
+														\
+  else if (TCOMPRESS_xy   == fmt.format() ) AccuXYZD<ACCUMODE_LINEAR>(nn, n);					\
+  else if (TCOMPRESS_XY   == fmt.format() ) AccuXYZD<ACCUMODE_SCALE >(nn, n);					\
+  else if (TCOMPRESS_xyCD == fmt.format() ) AccuXYCD<ACCUMODE_LINEAR>(nn, n);					\
+  else if (TCOMPRESS_XYCD == fmt.format() ) AccuXYCD<ACCUMODE_SCALE >(nn, n);					\
+  else if (TCOMPRESS_NINDEP (fmt.format())) AccuXYZD<ACCUMODE_LINEAR>(nn, n);					\
+  else if (TCOMPRESS_NORMAL (fmt.format())) AccuXYZD<ACCUMODE_SCALE >(nn, n);					\
 }
 #endif
 
@@ -95,48 +96,49 @@ struct f { const int format() const { return fmt; }};
  */
 
 #if	defined(format)
-#if	(TCOMPRESS_TRESH (format))
+#if	(TCOMPRESS_TRESH  (format))
 #define	Reduce(nn, nt)	\
   ReduceRGBA<ACCUMODE_SCALE >(nn, nt);	// +=
-#elif	(TCOMPRESS_TRANS (format))
+#elif	(TCOMPRESS_TRANS  (format))
 #define	Reduce(nn, nt)	\
   ReduceRGBA<ACCUMODE_LINEAR>(nn, nt);	// +=
-#elif	(TCOMPRESS_COLOR (format))
+#elif	(TCOMPRESS_COLOR  (format))
 #define	Reduce(nn, nt)	\
   ReduceRGBH<ACCUMODE_LINEAR>(nn, nt);	// +=
 
-#elif	(TCOMPRESS_xy  == format )
+#elif	(TCOMPRESS_xy   == format )
 #define	Reduce(nn, nt)	\
   ReduceXYZD<ACCUMODE_LINEAR>(nn, nt);	// +=
-#elif	(TCOMPRESS_XY  == format )
+#elif	(TCOMPRESS_XY   == format )
 #define	Reduce(nn, nt)	\
   ReduceXYZD<ACCUMODE_SCALE >(nn, nt);	// +=
-#elif	(TCOMPRESS_NINDEP(format))
+#elif	(TCOMPRESS_xyCD == format )
+#define	Reduce(nn, nt)	\
+  ReduceXYCD<ACCUMODE_LINEAR>(nn, nt);	// +=
+#elif	(TCOMPRESS_XYCD == format )
+#define	Reduce(nn, nt)	\
+  ReduceXYCD<ACCUMODE_SCALE >(nn, nt);	// +=
+#elif	(TCOMPRESS_NINDEP (format))
 #define	Reduce(nn, nt)	\
   ReduceXYZD<ACCUMODE_LINEAR>(nn, nt);	// +=
-#elif	(TCOMPRESS_NORMAL(format))
+#elif	(TCOMPRESS_NORMAL (format))
 #define	Reduce(nn, nt)	\
   ReduceXYZD<ACCUMODE_SCALE >(nn, nt);	// +=
 #else
 #error
 #endif
 #else
-#define	Reduce(nn, nt) {			\
-  /**/ if (TCOMPRESS_TRESH (fmt.format()))	\
-    ReduceRGBA<ACCUMODE_SCALE >(nn, nt);	\
-  else if (TCOMPRESS_TRANS (fmt.format()))	\
-    ReduceRGBA<ACCUMODE_LINEAR>(nn, nt);	\
-  else if (TCOMPRESS_COLOR (fmt.format()))	\
-    ReduceRGBH<ACCUMODE_LINEAR>(nn, nt);	\
-						\
-  else if (TCOMPRESS_xy  == fmt.format())	\
-    ReduceXYZD<ACCUMODE_LINEAR>(nn, nt);	\
-  else if (TCOMPRESS_XY  == fmt.format())	\
-    ReduceXYZD<ACCUMODE_SCALE >(nn, nt);	\
-  else if (TCOMPRESS_NINDEP(fmt.format()))	\
-    ReduceXYZD<ACCUMODE_LINEAR>(nn, nt);	\
-  else if (TCOMPRESS_NORMAL(fmt.format()))	\
-    ReduceXYZD<ACCUMODE_SCALE >(nn, nt);	\
+#define	Reduce(nn, nt) {								\
+  /**/ if (TCOMPRESS_TRESH  (fmt.format())) ReduceRGBA<ACCUMODE_SCALE >(nn, nt);	\
+  else if (TCOMPRESS_TRANS  (fmt.format())) ReduceRGBA<ACCUMODE_LINEAR>(nn, nt);	\
+  else if (TCOMPRESS_COLOR  (fmt.format())) ReduceRGBH<ACCUMODE_LINEAR>(nn, nt);	\
+											\
+  else if (TCOMPRESS_xy   == fmt.format() ) ReduceXYZD<ACCUMODE_LINEAR>(nn, nt);	\
+  else if (TCOMPRESS_XY   == fmt.format() ) ReduceXYZD<ACCUMODE_SCALE >(nn, nt);	\
+  else if (TCOMPRESS_xyCD == fmt.format() ) ReduceXYCD<ACCUMODE_LINEAR>(nn, nt);	\
+  else if (TCOMPRESS_XYCD == fmt.format() ) ReduceXYCD<ACCUMODE_SCALE >(nn, nt);	\
+  else if (TCOMPRESS_NINDEP (fmt.format())) ReduceXYZD<ACCUMODE_LINEAR>(nn, nt);	\
+  else if (TCOMPRESS_NORMAL (fmt.format())) ReduceXYZD<ACCUMODE_SCALE >(nn, nt);	\
 }
 #endif
 
@@ -144,48 +146,49 @@ struct f { const int format() const { return fmt; }};
  */
 
 #if	defined(format)
-#if	(TCOMPRESS_TRESH (format))
+#if	(TCOMPRESS_TRESH  (format))
 #define	Norm(onn, nn, av, level, l)	\
   NormRGBA<ACCUMODE_SCALE >(onn, nn, av, level, l, ALPHAS_SCALEBYLEVEL, colorgammainv, alphacontrastinv);
-#elif	(TCOMPRESS_TRANS (format))
+#elif	(TCOMPRESS_TRANS  (format))
 #define	Norm(onn, nn, av, level, l)	\
   NormRGBA<ACCUMODE_LINEAR>(onn, nn, av, level, l, ALPHAS_SCALEBYLEVEL, colorgammainv, alphacontrastinv);
-#elif	(TCOMPRESS_COLOR (format))
+#elif	(TCOMPRESS_COLOR  (format))
 #define	Norm(onn, nn, av, level, l)	\
   NormRGBH<ACCUMODE_LINEAR>(onn, nn, av                               , colorgammainv);
 
-#elif	(TCOMPRESS_xy  == format )
+#elif	(TCOMPRESS_xy   == format )
 #define	Norm(onn, nn, av, level, l)	\
   NormXYZD<ACCUMODE_LINEAR>(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);
-#elif	(TCOMPRESS_XY  == format )
+#elif	(TCOMPRESS_XY   == format )
 #define	Norm(onn, nn, av, level, l)	\
   NormXYZD<ACCUMODE_SCALE >(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);
-#elif	(TCOMPRESS_NINDEP(format))
+#elif	(TCOMPRESS_xyCD == format )
+#define	Norm(onn, nn, av, level, l)	\
+  NormXYCD<ACCUMODE_LINEAR>(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);
+#elif	(TCOMPRESS_XYCD == format )
+#define	Norm(onn, nn, av, level, l)	\
+  NormXYCD<ACCUMODE_SCALE >(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);
+#elif	(TCOMPRESS_NINDEP (format))
 #define	Norm(onn, nn, av, level, l)	\
   NormXYZD<ACCUMODE_LINEAR>(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);
-#elif	(TCOMPRESS_NORMAL(format))
+#elif	(TCOMPRESS_NORMAL (format))
 #define	Norm(onn, nn, av, level, l)	\
   NormXYZD<ACCUMODE_SCALE >(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);
 #else
 #error
 #endif
 #else
-#define	Norm(onn, nn, av, level, l) {										\
-  /**/ if (TCOMPRESS_TRESH (format))										\
-    NormRGBA<ACCUMODE_SCALE >(onn, nn, av, level, l, ALPHAS_SCALEBYLEVEL, colorgammainv, alphacontrastinv);	\
-  else if (TCOMPRESS_TRANS (format))										\
-    NormRGBA<ACCUMODE_LINEAR>(onn, nn, av, level, l, ALPHAS_SCALEBYLEVEL, colorgammainv, alphacontrastinv);	\
-  else if (TCOMPRESS_COLOR (format))										\
-    NormRGBH<ACCUMODE_LINEAR>(onn, nn, av                               , colorgammainv);			\
-														\
-  else if (TCOMPRESS_xy  == format )										\
-    NormXYZD<ACCUMODE_LINEAR>(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
-  else if (TCOMPRESS_XY  == format )										\
-    NormXYZD<ACCUMODE_SCALE >(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
-  else if (TCOMPRESS_NINDEP(format))										\
-    NormXYZD<ACCUMODE_LINEAR>(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
-  else if (TCOMPRESS_NORMAL(format))										\
-    NormXYZD<ACCUMODE_SCALE >(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
+#define	Norm(onn, nn, av, level, l) {														\
+  /**/ if (TCOMPRESS_TRESH  (format)) NormRGBA<ACCUMODE_SCALE >(onn, nn, av, level, l, ALPHAS_SCALEBYLEVEL, colorgammainv, alphacontrastinv);	\
+  else if (TCOMPRESS_TRANS  (format)) NormRGBA<ACCUMODE_LINEAR>(onn, nn, av, level, l, ALPHAS_SCALEBYLEVEL, colorgammainv, alphacontrastinv);	\
+  else if (TCOMPRESS_COLOR  (format)) NormRGBH<ACCUMODE_LINEAR>(onn, nn, av                               , colorgammainv);			\
+																		\
+  else if (TCOMPRESS_xy   == format ) NormXYZD<ACCUMODE_LINEAR>(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
+  else if (TCOMPRESS_XY   == format ) NormXYZD<ACCUMODE_SCALE >(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
+  else if (TCOMPRESS_xyCD == format ) NormXYCD<ACCUMODE_LINEAR>(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
+  else if (TCOMPRESS_XYCD == format ) NormXYCD<ACCUMODE_SCALE >(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
+  else if (TCOMPRESS_NINDEP (format)) NormXYZD<ACCUMODE_LINEAR>(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
+  else if (TCOMPRESS_NORMAL (format)) NormXYZD<ACCUMODE_SCALE >(onn, nn, av, level, l, NORMALS_SCALEBYLEVEL);					\
 }
 #endif
 
@@ -193,43 +196,45 @@ struct f { const int format() const { return fmt; }};
  */
 
 #if	defined(format)
-#if	(TCOMPRESS_TRANS (format))
+#if	(TCOMPRESS_TRANS  (format))
 #define	Look(nn, nr)	\
   LookRGBA<TRGTMODE_CODING_RGB    >(nn, nr);
-#elif	(TCOMPRESS_COLOR (format))
+#elif	(TCOMPRESS_COLOR  (format))
 #define	Look(nn, nr)	\
   LookRGBH<TRGTMODE_CODING_RGB    >(nn, nr);
 
-#elif	(TCOMPRESS_xy  == format )
+#elif	(TCOMPRESS_xy   == format )
 #define	Look(nn, nr)	\
   LookXYZD<TRGTMODE_CODING_XY     >(nn, nr);
-#elif	(TCOMPRESS_XY  == format )
+#elif	(TCOMPRESS_XY   == format )
 #define	Look(nn, nr)	\
   LookXYZD<TRGTMODE_CODING_DXDYt  >(nn, nr);
-#elif	(TCOMPRESS_NINDEP(format))
+#elif	(TCOMPRESS_xyCD == format )
+#define	Look(nn, nr)	\
+  LookXYCD<TRGTMODE_CODING_XY     >(nn, nr);
+#elif	(TCOMPRESS_XYCD == format )
+#define	Look(nn, nr)	\
+  LookXYCD<TRGTMODE_CODING_DXDYt  >(nn, nr);
+#elif	(TCOMPRESS_NINDEP (format))
 #define	Look(nn, nr)	\
   LookXYZD<TRGTMODE_CODING_XYZ    >(nn, nr);
-#elif	(TCOMPRESS_NORMAL(format))
+#elif	(TCOMPRESS_NORMAL (format))
 #define	Look(nn, nr)	\
   LookXYZD<TRGTMODE_CODING_DXDYDZt>(nn, nr);
 #else
 #error
 #endif
 #else
-#define	Look(nn, nr) {					\
-  /**/ if (TCOMPRESS_TRANS (format))			\
-    LookRGBA<TRGTMODE_CODING_RGB    >(nn, nr);		\
-  else if (TCOMPRESS_COLOR (format))			\
-    LookRGBH<TRGTMODE_CODING_RGB    >(nn, nr);		\
-							\
-  else if (TCOMPRESS_xy  == format )			\
-    LookXYZD<TRGTMODE_CODING_XY     >(nn, nr);		\
-  else if (TCOMPRESS_XY  == format )			\
-    LookXYZD<TRGTMODE_CODING_DXDYt  >(nn, nr);		\
-  else if (TCOMPRESS_NINDEP(format))			\
-    LookXYZD<TRGTMODE_CODING_XYZ    >(nn, nr);		\
-  else if (TCOMPRESS_NORMAL(format))			\
-    LookXYZD<TRGTMODE_CODING_DXDYdZt>(nn, nr);		\
+#define	Look(nn, nr) {									\
+  /**/ if (TCOMPRESS_TRANS  (format)) LookRGBA<TRGTMODE_CODING_RGB    >(nn, nr);	\
+  else if (TCOMPRESS_COLOR  (format)) LookRGBH<TRGTMODE_CODING_RGB    >(nn, nr);	\
+											\
+  else if (TCOMPRESS_xy   == format ) LookXYZD<TRGTMODE_CODING_XY     >(nn, nr);	\
+  else if (TCOMPRESS_XY   == format ) LookXYZD<TRGTMODE_CODING_DXDYt  >(nn, nr);	\
+  else if (TCOMPRESS_xyCD == format ) LookXYCD<TRGTMODE_CODING_XY     >(nn, nr);	\
+  else if (TCOMPRESS_XYCD == format ) LookXYCD<TRGTMODE_CODING_DXDYt  >(nn, nr);	\
+  else if (TCOMPRESS_NINDEP (format)) LookXYZD<TRGTMODE_CODING_XYZ    >(nn, nr);	\
+  else if (TCOMPRESS_NORMAL (format)) LookXYZD<TRGTMODE_CODING_DXDYdZt>(nn, nr);	\
 }
 #endif
 
@@ -237,43 +242,45 @@ struct f { const int format() const { return fmt; }};
  */
 
 #if	defined(format)
-#if	(TCOMPRESS_TRANS (format))
+#if	(TCOMPRESS_TRANS  (format))
 #define	Code(nn, nr, z)	\
   CodeRGBA<TRGTMODE_CODING_RGB       >(nn, nr);
-#elif	(TCOMPRESS_COLOR (format))
+#elif	(TCOMPRESS_COLOR  (format))
 #define	Code(nn, nr, z)	\
   CodeRGBH<TRGTMODE_CODING_RGB       >(nn, nr);
 
-#elif	(TCOMPRESS_xy  == format )
+#elif	(TCOMPRESS_xy  ==  format )
 #define	Code(nn, nr, z)	\
   CodeXYZD<TRGTMODE_CODING_XY     , z>(nn, nr);
-#elif	(TCOMPRESS_XY  == format )
+#elif	(TCOMPRESS_XY  ==  format )
 #define	Code(nn, nr, z)	\
   CodeXYZD<TRGTMODE_CODING_DXDYt  , z>(nn, nr);
-#elif	(TCOMPRESS_NINDEP(format))
+#elif	(TCOMPRESS_xyCD == format )
+#define	Code(nn, nr, z)	\
+  CodeXYCD<TRGTMODE_CODING_XY     , z>(nn, nr);
+#elif	(TCOMPRESS_XYCD == format )
+#define	Code(nn, nr, z)	\
+  CodeXYCD<TRGTMODE_CODING_DXDYt  , z>(nn, nr);
+#elif	(TCOMPRESS_NINDEP (format))
 #define	Code(nn, nr, z)	\
   CodeXYZD<TRGTMODE_CODING_XYZ    , z>(nn, nr);
-#elif	(TCOMPRESS_NORMAL(format))
+#elif	(TCOMPRESS_NORMAL (format))
 #define	Code(nn, nr, z)	\
   CodeXYZD<TRGTMODE_CODING_DXDYDZt, z>(nn, nr);
 #else
 #error
 #endif
 #else
-#define	Code(nn, nr, zprec) {				\
-  /**/ if (TCOMPRESS_TRANS (format))			\
-    CodeRGBA<TRGTMODE_CODING_RGB           >(nn, nr);	\
-  else if (TCOMPRESS_COLOR (format))			\
-    CodeRGBH<TRGTMODE_CODING_RGB           >(nn, nr);	\
-							\
-  else if (TCOMPRESS_xy  == format )			\
-    CodeXYZD<TRGTMODE_CODING_XY     , zprec>(nn, nr);	\
-  else if (TCOMPRESS_XY  == format )			\
-    CodeXYZD<TRGTMODE_CODING_DXDYt  , zprec>(nn, nr);	\
-  else if (TCOMPRESS_NINDEP(format))			\
-    CodeXYZD<TRGTMODE_CODING_XYZ    , zprec>(nn, nr);	\
-  else if (TCOMPRESS_NORMAL(format))			\
-    CodeXYZD<TRGTMODE_CODING_DXDYdZt, zprec>(nn, nr);	\
+#define	Code(nn, nr, zprec) {								\
+  /**/ if (TCOMPRESS_TRANS  (format)) CodeRGBA<TRGTMODE_CODING_RGB           >(nn, nr);	\
+  else if (TCOMPRESS_COLOR  (format)) CodeRGBH<TRGTMODE_CODING_RGB           >(nn, nr);	\
+											\
+  else if (TCOMPRESS_xy   == format ) CodeXYZD<TRGTMODE_CODING_XY     , zprec>(nn, nr);	\
+  else if (TCOMPRESS_XY   == format ) CodeXYZD<TRGTMODE_CODING_DXDYt  , zprec>(nn, nr);	\
+  else if (TCOMPRESS_xyCD == format ) CodeXYCD<TRGTMODE_CODING_XY     , zprec>(nn, nr);	\
+  else if (TCOMPRESS_XYCD == format ) CodeXYCD<TRGTMODE_CODING_DXDYt  , zprec>(nn, nr);	\
+  else if (TCOMPRESS_NINDEP (format)) CodeXYZD<TRGTMODE_CODING_XYZ    , zprec>(nn, nr);	\
+  else if (TCOMPRESS_NORMAL (format)) CodeXYZD<TRGTMODE_CODING_DXDYdZt, zprec>(nn, nr);	\
 }
 #endif
 
@@ -281,53 +288,66 @@ struct f { const int format() const { return fmt; }};
  */
 
 #if	defined(format)
-#if	(TCOMPRESS_TRANS (format))
+#if	(TCOMPRESS_TRANS  (format))
 #define	Join(nn, nr)	      JoinRGBA<TRGTMODE_CODING_RGB    >(nn, nr)
-#elif	(TCOMPRESS_COLOR (format))
+#elif	(TCOMPRESS_COLOR  (format))
 #define	Join(nn, nr)	      JoinRGBH<TRGTMODE_CODING_RGB    >(nn, nr)
 
-#elif	(TCOMPRESS_xy  == format )
+#elif	(TCOMPRESS_xy   == format )
 #define	Join(nn, nr)	      JoinXYZD<TRGTMODE_CODING_XY     >(nn, nr)
-#elif	(TCOMPRESS_XY  == format )
+#elif	(TCOMPRESS_XY   == format )
 #define	Join(nn, nr)	      JoinXYZD<TRGTMODE_CODING_DXDYt  >(nn, nr)
-#elif	(TCOMPRESS_NINDEP(format))
+#elif	(TCOMPRESS_xyCD == format )
+#define	Join(nn, nr)	      JoinXYCD<TRGTMODE_CODING_XY     >(nn, nr)
+#elif	(TCOMPRESS_XYCD == format )
+#define	Join(nn, nr)	      JoinXYCD<TRGTMODE_CODING_DXDYt  >(nn, nr)
+#elif	(TCOMPRESS_NINDEP (format))
 #define	Join(nn, nr)	      JoinXYZD<TRGTMODE_CODING_XYZ    >(nn, nr)
-#elif	(TCOMPRESS_NORMAL(format))
+#elif	(TCOMPRESS_NORMAL (format))
 #define	Join(nn, nr)	      JoinXYZD<TRGTMODE_CODING_DXDYDZt>(nn, nr)
 #else
 #error
 #endif
 #else
 #define	Join(nn, nr)								\
-  (TCOMPRESS_TRANS (format) ? JoinRGBA<TRGTMODE_CODING_RGB    >(nn, nr) :	\
-  (TCOMPRESS_COLOR (format) ? JoinRGBH<TRGTMODE_CODING_RGB    >(nn, nr) :	\
-  (TCOMPRESS_xy  == format  ? JoinXYZD<TRGTMODE_CODING_XY     >(nn, nr) :	\
-  (TCOMPRESS_XY  == format  ? JoinXYZD<TRGTMODE_CODING_DXDYt  >(nn, nr) :	\
-  (TCOMPRESS_NINDEP(format) ? JoinXYZD<TRGTMODE_CODING_XYZ    >(nn, nr) :	\
-  (TCOMPRESS_NORMAL(format) ? JoinXYZD<TRGTMODE_CODING_DXDYdZt>(nn, nr) :	\
-  (0)))))))
+  (TCOMPRESS_TRANS  (format) ? JoinRGBA<TRGTMODE_CODING_RGB    >(nn, nr) :	\
+  (TCOMPRESS_COLOR  (format) ? JoinRGBH<TRGTMODE_CODING_RGB    >(nn, nr) :	\
+										\
+  (TCOMPRESS_xy   == format  ? JoinXYZD<TRGTMODE_CODING_XY     >(nn, nr) :	\
+  (TCOMPRESS_XY   == format  ? JoinXYZD<TRGTMODE_CODING_DXDYt  >(nn, nr) :	\
+  (TCOMPRESS_xyCD == format  ? JoinXYCD<TRGTMODE_CODING_XY     >(nn, nr) :	\
+  (TCOMPRESS_XYCD == format  ? JoinXYCD<TRGTMODE_CODING_DXDYt  >(nn, nr) :	\
+  (TCOMPRESS_NINDEP (format) ? JoinXYZD<TRGTMODE_CODING_XYZ    >(nn, nr) :	\
+  (TCOMPRESS_NORMAL (format) ? JoinXYZD<TRGTMODE_CODING_DXDYdZt>(nn, nr) :	\
+  (0)))))))))
 #endif
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  */
 
 #if	defined(format)
-#if	(TCOMPRESS_TRANS (format))
+#if	(TCOMPRESS_TRANS  (format))
 #define	Range(bo, bi)	\
   RangeRGBA<TRGTMODE_CODING_RGB    >(bo, bi);
-#elif	(TCOMPRESS_COLOR (format))
+#elif	(TCOMPRESS_COLOR  (format))
 #define	Range(bo, bi)	\
   RangeRGBH<TRGTMODE_CODING_RGB    >(bo, bi);
-#elif	(TCOMPRESS_xy  == format )
+#elif	(TCOMPRESS_xy   == format )
 #define	Range(bo, bi)	\
   RangeXYZD<TRGTMODE_CODING_XY     >(bo, bi);
-#elif	(TCOMPRESS_XY  == format )
+#elif	(TCOMPRESS_XY   == format )
 #define	Range(bo, bi)	\
   RangeXYZD<TRGTMODE_CODING_DXDYt  >(bo, bi);
-#elif	(TCOMPRESS_NINDEP(format))
+#elif	(TCOMPRESS_xyCD == format )
+#define	Range(bo, bi)	\
+  RangeXYZD<TRGTMODE_CODING_XY     >(bo, bi);
+#elif	(TCOMPRESS_XYCD == format )
+#define	Range(bo, bi)	\
+  RangeXYZD<TRGTMODE_CODING_DXDYt  >(bo, bi);
+#elif	(TCOMPRESS_NINDEP (format))
 #define	Range(bo, bi)	\
   RangeXYZD<TRGTMODE_CODING_XYZ    >(bo, bi);
-#elif	(TCOMPRESS_NORMAL(format))
+#elif	(TCOMPRESS_NORMAL (format))
 #define	Range(bo, bi)	\
   RangeXYZD<TRGTMODE_CODING_DXDYDZt>(bo, bi);
 #else
@@ -335,13 +355,16 @@ struct f { const int format() const { return fmt; }};
 #endif
 #else
 #define	Range(bo, bi)								\
-  (TCOMPRESS_TRANS (format) ? RangeRGBA<TRGTMODE_CODING_RGB    >(bo, bi) :	\
-  (TCOMPRESS_COLOR (format) ? RangeRGBH<TRGTMODE_CODING_RGB    >(bo, bi) :	\
-  (TCOMPRESS_xy  == format  ? RangeXYZD<TRGTMODE_CODING_XY     >(bo, bi) :	\
-  (TCOMPRESS_XY  == format  ? RangeXYZD<TRGTMODE_CODING_DXDYt  >(bo, bi) :	\
-  (TCOMPRESS_NINDEP(format) ? RangeXYZD<TRGTMODE_CODING_XYZ    >(bo, bi) :	\
-  (TCOMPRESS_NORMAL(format) ? RangeXYZD<TRGTMODE_CODING_DXDYdZt>(bo, bi) :	\
-  (0)))))))
+  (TCOMPRESS_TRANS  (format) ? RangeRGBA<TRGTMODE_CODING_RGB    >(bo, bi) :	\
+  (TCOMPRESS_COLOR  (format) ? RangeRGBH<TRGTMODE_CODING_RGB    >(bo, bi) :	\
+										\
+  (TCOMPRESS_xy   == format  ? RangeXYZD<TRGTMODE_CODING_XY     >(bo, bi) :	\
+  (TCOMPRESS_XY   == format  ? RangeXYZD<TRGTMODE_CODING_DXDYt  >(bo, bi) :	\
+  (TCOMPRESS_xyCD == format  ? RangeXYCD<TRGTMODE_CODING_XY     >(bo, bi) :	\
+  (TCOMPRESS_XYCD == format  ? RangeXYCD<TRGTMODE_CODING_DXDYt  >(bo, bi) :	\
+  (TCOMPRESS_NINDEP (format) ? RangeXYZD<TRGTMODE_CODING_XYZ    >(bo, bi) :	\
+  (TCOMPRESS_NORMAL (format) ? RangeXYZD<TRGTMODE_CODING_DXDYdZt>(bo, bi) :	\
+  (0)))))))))
 #endif
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -151,7 +151,7 @@
 //    elm.barrier.wait_with_tile_static_memory_fence();
 #else
       }
-    
+
       accu tr = {0};
 #endif
 
@@ -243,7 +243,7 @@
 	    int t1 = bTex[0][ly][lx + 1];
 
 	    /* write combining */
-	    unsigned int val = (ULONG)((t1 << 16) | (t0 << 0));
+	    unsigned int val = (ULONG)((t1 << 16) + (t0 << 0));
 
 	    /* write out all of an "int" */
 	    dArr(lposy, lposx) = val;
@@ -262,7 +262,7 @@
 	    int t3 = bTex[0][ly][lx + 3];
 
 	    /* write combining */
-	    unsigned int val = (ULONG)((t3 << 24) | (t2 << 16) | (t1 << 8) | (t0 << 0));
+	    unsigned int val = (ULONG)((t3 << 24) + (t2 << 16) + (t1 << 8) + (t0 << 0));
 
 	    /* write out all of an "int" */
 	    dArr(lposy, lposx) = val;

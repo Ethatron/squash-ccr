@@ -289,30 +289,33 @@ namespace squash {
 
 #define	MIPMAP_ROUND		0	// round down, throw away 1 line for non-pow2
 #define	MIPMAP_MINIMUM		1	// 4
-#define	MIPMAP_CHECK(ww, hh, dd)	(!leavemiplevels			\
+#define	MIPMAP_CHECK2D(ww, hh)		(!leavemiplevels			\
+  ? (ww > MIPMAP_MINIMUM) && (hh > MIPMAP_MINIMUM)				\
+  : (ww > MIPMAP_MINIMUM) || (hh > MIPMAP_MINIMUM))
+#define	MIPMAP_CHECK3D(ww, hh, dd)	(!leavemiplevels			\
   ? (ww > MIPMAP_MINIMUM) && (hh > MIPMAP_MINIMUM) && (dd > MIPMAP_MINIMUM)	\
   : (ww > MIPMAP_MINIMUM) || (hh > MIPMAP_MINIMUM) || (dd > MIPMAP_MINIMUM))
 
 int TextureCalcMip(int w, int h, int minlvl) {
-  int levels = 1;
+  int levels = 0;
 
   /* the lowest mip-level contains a row or a column of 4x4 blocks
    * we won't generate mip-levels for mips smaller than the BTC-area
    */
   int ww = w;
   int hh = h;
-  while (MIPMAP_CHECK(ww, hh, 2)) {
+  do {
     ww = (ww + MIPMAP_ROUND) >> 1;
     hh = (hh + MIPMAP_ROUND) >> 1;
 //  ww = (ww <= 0 ? 1 : ww);
 //  hh = (hh <= 0 ? 1 : hh);
 
     levels++;
-  }
+  } while (MIPMAP_CHECK2D(ww, hh));
 
   if (minlvl < 0)
     minlvl = -minlvl, levels = min(minlvl, levels);
-  assert(levels >= 0);
+  assert(levels >= 1);
 
   return levels;
 }
@@ -335,7 +338,7 @@ int TextureCalcMip(int w, int h, int lw, int lh) {
 }
 
 int TextureCalcVolumeMip(int w, int h, int d, int minlvl) {
-  int levels = 1;
+  int levels = 0;
 
   /* the lowest mip-level contains a row or a column of 4x4 blocks
    * we won't generate mip-levels for mips smaller than the BTC-area
@@ -343,7 +346,7 @@ int TextureCalcVolumeMip(int w, int h, int d, int minlvl) {
   int ww = w;
   int hh = h;
   int dd = d;
-  while (MIPMAP_CHECK(ww, hh, dd)) {
+  do {
     ww = (ww + MIPMAP_ROUND) >> 1;
     hh = (hh + MIPMAP_ROUND) >> 1;
     dd = (dd + MIPMAP_ROUND) >> 1;
@@ -352,11 +355,11 @@ int TextureCalcVolumeMip(int w, int h, int d, int minlvl) {
 //  dd = (dd <= 0 ? 1 : dd);
 
     levels++;
-  }
+  } while (MIPMAP_CHECK3D(ww, hh, dd));
 
   if (minlvl < 0)
     minlvl = -minlvl, levels = min(minlvl, levels);
-  assert(levels >= 0);
+  assert(levels >= 1);
 
   return levels;
 }
@@ -697,21 +700,21 @@ HRESULT TextureCreate(RESOURCEINFO &info, LPDIRECT3DBASETEXTURE *btex, int level
       LPDIRECT3DTEXTURE replct;
       if (levels < 0)
 	levels = TextureCalcMip(info.Width, info.Height, 0);
-      res = pD3DDevice->CreateTexture(info.Width, info.Height, 0, levels, info.Format, D3DPOOL_MANAGED, &replct, NULL);
+      res = pD3DDevice->CreateTexture(info.Width, info.Height, levels, 0, info.Format, D3DPOOL_MANAGED, &replct, NULL);
       breplct = replct;
     } break;
     case D3DRTYPE_VOLUMETEXTURE: {
       LPDIRECT3DVOLTEXTURE replct;
       if (levels < 0)
 	levels = TextureCalcVolumeMip(info.Width, info.Height, info.Depth, 0);
-      res = pD3DDevice->CreateVolumeTexture(info.Width, info.Height, info.Depth, 0, levels, info.Format, D3DPOOL_MANAGED, &replct, NULL);
+      res = pD3DDevice->CreateVolumeTexture(info.Width, info.Height, info.Depth, levels, 0, info.Format, D3DPOOL_MANAGED, &replct, NULL);
       breplct = replct;
     } break;
     case D3DRTYPE_CUBETEXTURE: {
       LPDIRECT3DCUBETEXTURE replct;
       if (levels < 0)
 	levels = TextureCalcMip(max(info.Width, info.Height), max(info.Width, info.Height), 0);
-      res = pD3DDevice->CreateCubeTexture(max(info.Width, info.Height), 0, levels, info.Format, D3DPOOL_MANAGED, &replct, NULL);
+      res = pD3DDevice->CreateCubeTexture(max(info.Width, info.Height), levels, 0, info.Format, D3DPOOL_MANAGED, &replct, NULL);
       breplct = replct;
     } break;
   }
@@ -854,6 +857,16 @@ bool TextureFillMip(int w, int h, LPDIRECT3DBASETEXTURE *btex, bool dither, bool
 
   TextureInfoLevel((*btex), texo, 0);
 
+  /* calculate how much levels to copy */
+  int baselvl = 0;
+#ifdef DX11
+  int upprlvl = texo.MipLevels;
+#else
+  int upprlvl = (*btex)->GetLevelCount();
+#endif
+  if (upprlvl > levels)
+    upprlvl = levels;
+
   res = TextureCreate(texo, &breplct, levels);
   if (res != S_OK)
     return false;
@@ -878,44 +891,65 @@ bool TextureFillMip(int w, int h, LPDIRECT3DBASETEXTURE *btex, bool dither, bool
       LPDIRECT3DTEXTURE9 *tex = ((LPDIRECT3DTEXTURE9 *)btex);
       LPDIRECT3DTEXTURE9 replct = ((LPDIRECT3DTEXTURE9)breplct);
       LPDIRECT3DSURFACE9 stex, srep;
-      {
-	(*tex)->GetSurfaceLevel(0, &stex);
-	replct->GetSurfaceLevel(0, &srep);
 
-	res = D3DXLoadSurfaceFromSurface(srep, NULL, NULL, stex, NULL, NULL, filter, 0);
+      while (baselvl < upprlvl) {
+	if ((res = (*tex)->GetSurfaceLevel(baselvl, &stex)) != D3D_OK)
+	  break;
+	if ((res = replct->GetSurfaceLevel(baselvl, &srep)) != D3D_OK)
+	  break;
+
+	if ((res = D3DXLoadSurfaceFromSurface(srep, NULL, NULL, stex, NULL, NULL, filter, 0)) != D3D_OK)
+	  break;
 
 	stex->Release();
 	srep->Release();
+
+	baselvl++;
       }
     } break;
     case D3DRTYPE_VOLUMETEXTURE: {
       LPDIRECT3DVOLUMETEXTURE9 *tex = ((LPDIRECT3DVOLUMETEXTURE9 *)btex);
       LPDIRECT3DVOLUMETEXTURE9 replct = ((LPDIRECT3DVOLUMETEXTURE9)breplct);
       LPDIRECT3DVOLUME9 stex, srep;
-      {
-	(*tex)->GetVolumeLevel(0, &stex);
-	replct->GetVolumeLevel(0, &srep);
 
-	res = D3DXLoadVolumeFromVolume(srep, NULL, NULL, stex, NULL, NULL, filter, 0);
+      while (baselvl < upprlvl) {
+	if ((res = (*tex)->GetVolumeLevel(baselvl, &stex)) != D3D_OK)
+	  break;
+	if ((res = replct->GetVolumeLevel(baselvl, &srep)) != D3D_OK)
+	  break;
+
+	if ((res = D3DXLoadVolumeFromVolume(srep, NULL, NULL, stex, NULL, NULL, filter, 0)) != D3D_OK)
+	  break;
 
 	stex->Release();
 	srep->Release();
+
+	baselvl++;
       }
     } break;
     case D3DRTYPE_CUBETEXTURE: {
       LPDIRECT3DCUBETEXTURE9 *tex = ((LPDIRECT3DCUBETEXTURE9 *)btex);
       LPDIRECT3DCUBETEXTURE9 replct = ((LPDIRECT3DCUBETEXTURE9)breplct);
       LPDIRECT3DSURFACE9 stex, srep;
-      for (int f = 0; f < 6; f++) {
-	(*tex)->GetCubeMapSurface((D3DCUBEMAP_FACES)f, 0, &stex);
-	replct->GetCubeMapSurface((D3DCUBEMAP_FACES)f, 0, &srep);
 
-	res = D3DXLoadSurfaceFromSurface(srep, NULL, NULL, stex, NULL, NULL, filter, 0);
+      while (baselvl < upprlvl) {
+	for (int f = 0; f < 6; f++) {
+	  if ((res = (*tex)->GetCubeMapSurface((D3DCUBEMAP_FACES)f, baselvl, &stex)) != D3D_OK)
+	    break;
+	  if ((res = replct->GetCubeMapSurface((D3DCUBEMAP_FACES)f, baselvl, &srep)) != D3D_OK)
+	    break;
+
+	  if ((res = D3DXLoadSurfaceFromSurface(srep, NULL, NULL, stex, NULL, NULL, filter, 0)) != D3D_OK)
+	    break;
+
+	  stex->Release();
+	  srep->Release();
+	}
+
 	if (res != D3D_OK)
 	  break;
 
-	stex->Release();
-	srep->Release();
+	baselvl++;
       }
     } break;
   }
@@ -926,10 +960,10 @@ bool TextureFillMip(int w, int h, LPDIRECT3DBASETEXTURE *btex, bool dither, bool
     (*btex) = breplct;
 
 #ifdef DX11
-    if (D3DX11FilterTexture(pD3DDeviceContext, (*btex), 1, filter) == S_OK)
+    if (D3DX11FilterTexture(pD3DDeviceContext, (*btex), baselvl, filter) == S_OK)
       return true;
 #else
-    if (D3DXFilterTexture((*btex), NULL, 0, filter) == D3D_OK)
+    if (D3DXFilterTexture((*btex), NULL, baselvl - 1, filter) == D3D_OK)
       return true;
 #endif
     
@@ -962,12 +996,12 @@ bool TextureDownMip(int w, int h, LPDIRECT3DBASETEXTURE *btex) {
   /* nothing to do */
   if (baselvl == trnslvl)
     return true;
-
-#ifdef DX11
-  res = TextureCreate(texo, &breplct, 1);
+  
+  res = TextureCreate(texo, &breplct, levels);
   if (res != S_OK)
     return false;
 
+#ifdef DX11
   D3DX11_TEXTURE_LOAD_INFO load;
   memset(&load, 0, sizeof(load));
 
@@ -989,10 +1023,6 @@ bool TextureDownMip(int w, int h, LPDIRECT3DBASETEXTURE *btex) {
     trnslvl++;
   }
 #else
-  res = TextureCreate(texo, &breplct, 0);
-  if (res != S_OK)
-    return false;
-
   switch ((*btex)->GetType()) {
     case D3DRTYPE_TEXTURE: {
       LPDIRECT3DTEXTURE9 *tex = ((LPDIRECT3DTEXTURE9 *)btex);
@@ -1005,7 +1035,8 @@ bool TextureDownMip(int w, int h, LPDIRECT3DBASETEXTURE *btex) {
 	if ((res = replct->GetSurfaceLevel(trnslvl, &srep)) != D3D_OK)
 	  break;
 
-	res = D3DXLoadSurfaceFromSurface(srep, NULL, NULL, stex, NULL, NULL, D3DX_FILTER_NONE, 0);
+	if ((res = D3DXLoadSurfaceFromSurface(srep, NULL, NULL, stex, NULL, NULL, D3DX_FILTER_NONE, 0)) != D3D_OK)
+	  break;
 
 	stex->Release();
 	srep->Release();
@@ -1025,7 +1056,8 @@ bool TextureDownMip(int w, int h, LPDIRECT3DBASETEXTURE *btex) {
 	if ((res = replct->GetVolumeLevel(trnslvl, &srep)) != D3D_OK)
 	  break;
 
-	res = D3DXLoadVolumeFromVolume(srep, NULL, NULL, stex, NULL, NULL, D3DX_FILTER_NONE, 0);
+	if ((res = D3DXLoadVolumeFromVolume(srep, NULL, NULL, stex, NULL, NULL, D3DX_FILTER_NONE, 0)) != D3D_OK)
+	  break;
 
 	stex->Release();
 	srep->Release();
@@ -1046,8 +1078,7 @@ bool TextureDownMip(int w, int h, LPDIRECT3DBASETEXTURE *btex) {
 	  if ((res = replct->GetCubeMapSurface((D3DCUBEMAP_FACES)f, trnslvl, &srep)) != D3D_OK)
 	    break;
 
-	  res = D3DXLoadSurfaceFromSurface(srep, NULL, NULL, stex, NULL, NULL, D3DX_FILTER_NONE, 0);
-	  if (res != D3D_OK)
+	  if ((res = D3DXLoadSurfaceFromSurface(srep, NULL, NULL, stex, NULL, NULL, D3DX_FILTER_NONE, 0)) != D3D_OK)
 	    break;
 
 	  stex->Release();
@@ -1796,10 +1827,6 @@ HRESULT SaveBC45TextureToFileInMemory(LPD3DBUFFER *oubuf, LPDIRECT3DBASETEXTURE9
 }
 
 HRESULT SaveBC45TextureToFile(const char *fp, LPDIRECT3DBASETEXTURE9 pSrcTexture) {
-  FILE *f;
-  if (fopen_s(&f, fp, "wb"))
-    return S_FALSE;
-
   D3DSURFACE_DESC desc; int levels =
   ((IDirect3DTexture9 *)pSrcTexture)->GetLevelCount();
   ((IDirect3DTexture9 *)pSrcTexture)->GetLevelDesc(0, &desc);
@@ -1828,6 +1855,10 @@ HRESULT SaveBC45TextureToFile(const char *fp, LPDIRECT3DBASETEXTURE9 pSrcTexture
   head.ddspf.dwFlags = DDPF_FOURCC;
   head.dwSurfaceFlags = (levels > 1 ? DDSCAPS_MIPMAP : 0) | DDSCAPS_TEXTURE | DDSCAPS_COMPLEX;
 // (desc.Format == D3DFMT_ATI2 ? DDPF_NORMAL : 0);
+  
+  FILE *f;
+  if (fopen_s(&f, fp, "wb"))
+    return S_FALSE;
 
   fwrite(&head, 1, sizeof(head), f);
 
